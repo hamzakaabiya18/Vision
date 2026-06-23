@@ -4,46 +4,6 @@ const API       = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 const TOKEN_KEY = 'vision_token'
 const USER_KEY  = 'vision_user'
 
-function makeDemoUser(emailOrUsername = '') {
-  const name = emailOrUsername.includes('@')
-    ? emailOrUsername.split('@')[0]
-    : (emailOrUsername || 'athlete')
-  const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '_')
-  return {
-    _id:            'demo-' + slug,
-    fullName:       name.charAt(0).toUpperCase() + name.slice(1) + ' (Demo)',
-    username:       slug,
-    email:          emailOrUsername.includes('@') ? emailOrUsername : slug + '@demo.app',
-    avatarUrl:      '',
-    bio:            'Demo athlete — connect the backend to enable real accounts.',
-    sportTags:      ['Running', 'Cycling'],
-    followersCount: 0,
-    followingCount: 0,
-    activitiesCount:0,
-    isDemo:         true,
-  }
-}
-
-function makeDemoUserFromSignup(fields) {
-  return {
-    _id:            'demo-' + fields.username,
-    fullName:       fields.fullName,
-    username:       fields.username,
-    email:          fields.email,
-    avatarUrl:      '',
-    bio:            '',
-    sportTags:      fields.sports || [],
-    followersCount: 0,
-    followingCount: 0,
-    activitiesCount:0,
-    isDemo:         true,
-  }
-}
-
-function isOfflineError(err) {
-  return err.name === 'TypeError' || err.message === 'Failed to fetch' || err.message?.includes('fetch')
-}
-
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -59,8 +19,6 @@ export function AuthProvider({ children }) {
       if (cached) {
         try { setCurrentUser(JSON.parse(cached)) } catch {}
       }
-
-      if (token === 'demo-token') { setLoading(false); return }
 
       try {
         const res = await fetch(`${API}/auth/me`, {
@@ -89,53 +47,41 @@ export function AuthProvider({ children }) {
   }
 
   const login = useCallback(async ({ emailOrUsername, password }) => {
+    let res
     try {
-      const res = await fetch(`${API}/auth/login`, {
+      res = await fetch(`${API}/auth/login`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ emailOrUsername, password }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Login failed')
-      localStorage.setItem(TOKEN_KEY, data.token)
-      localStorage.setItem(USER_KEY, JSON.stringify(data.user))
-      setCurrentUser(data.user)
-      return data.user
-    } catch (err) {
-      if (isOfflineError(err)) {
-        const demo = makeDemoUser(emailOrUsername)
-        localStorage.setItem(TOKEN_KEY, 'demo-token')
-        localStorage.setItem(USER_KEY, JSON.stringify(demo))
-        setCurrentUser(demo)
-        return demo
-      }
-      throw err
+    } catch {
+      throw new Error('Cannot reach the server. Please make sure the backend is running.')
     }
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.message || 'Invalid email/username or password')
+    localStorage.setItem(TOKEN_KEY, data.token)
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+    setCurrentUser(data.user)
+    return data.user
   }, [])
 
   const signup = useCallback(async (fields) => {
+    let res
     try {
-      const res = await fetch(`${API}/auth/signup`, {
+      res = await fetch(`${API}/auth/signup`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(fields),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Signup failed')
-      localStorage.setItem(TOKEN_KEY, data.token)
-      localStorage.setItem(USER_KEY, JSON.stringify(data.user))
-      setCurrentUser(data.user)
-      return data.user
-    } catch (err) {
-      if (isOfflineError(err)) {
-        const demo = makeDemoUserFromSignup(fields)
-        localStorage.setItem(TOKEN_KEY, 'demo-token')
-        localStorage.setItem(USER_KEY, JSON.stringify(demo))
-        setCurrentUser(demo)
-        return demo
-      }
-      throw err
+    } catch {
+      throw new Error('Cannot reach the server. Please make sure the backend is running.')
     }
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.message || 'Signup failed')
+    localStorage.setItem(TOKEN_KEY, data.token)
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+    setCurrentUser(data.user)
+    return data.user
   }, [])
 
   const logout = useCallback(() => {

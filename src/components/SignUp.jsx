@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { VisionLockup } from './Brand'
 
 const SPORTS = ['Running','Cycling','Hiking','Swimming','Triathlon','CrossFit','Yoga','Rock Climbing']
 
@@ -10,7 +9,7 @@ export default function SignUp({ onBack }) {
   const [step,    setStep]    = useState(1)
   const [loading, setLoading] = useState(false)
   const [err,     setErr]     = useState('')
-  const [form,    setForm]    = useState({ fullName:'', username:'', email:'', password:'', sports:[] })
+  const [form,    setForm]    = useState({ fullName:'', username:'', email:'', password:'', confirmPassword:'', sports:[] })
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const toggleSport = s =>
@@ -21,8 +20,9 @@ export default function SignUp({ onBack }) {
       if (!form.fullName.trim()) return 'Please enter your full name'
       if (!form.username.trim()) return 'Please choose a username'
       if (!/^[a-z0-9_]{3,20}$/i.test(form.username.trim())) return 'Username: 3–20 chars, letters/numbers/underscore only'
-      if (!form.email.trim() || !form.email.includes('@')) return 'Please enter a valid email'
+      if (!form.email.trim() || !/^\S+@\S+\.\S+$/.test(form.email.trim())) return 'Please enter a valid email'
       if (form.password.length < 6) return 'Password must be at least 6 characters'
+      if (form.confirmPassword && form.confirmPassword !== form.password) return 'Passwords do not match'
     }
     return null
   }
@@ -52,12 +52,7 @@ export default function SignUp({ onBack }) {
   const inp    = { flex:1, background:'transparent', fontSize:14, color:'#1a1a2e', fontFamily:'inherit', border:'none', outline:'none' }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#F0FAFA', padding:24, fontFamily:"Inter,'SF Pro Display','Segoe UI',sans-serif" }}>
-      <div style={{ background:'#fff', borderRadius:28, padding:'36px 32px', width:'100%', maxWidth:420, boxShadow:'0 8px 40px rgba(0,128,128,0.14)', animation:'slideUp .4s ease' }}>
-        <div style={{ display:'flex', justifyContent:'center', marginBottom:28 }}>
-          <VisionLockup size={36} dark />
-        </div>
-
+    <div style={{ animation:'fadeIn .3s ease' }}>
         <div style={{ display:'flex', alignItems:'center', marginBottom:28, gap:8 }}>
           {[1,2,3].map(n => (
             <div key={n} style={{ flex:1, height:4, borderRadius:2, background: n<=step ? 'linear-gradient(90deg,#008080,#00E676)' : '#e0eeee', transition:'background .3s' }} />
@@ -73,6 +68,7 @@ export default function SignUp({ onBack }) {
               <div style={iStyle}><span style={{ color:'#9aaab8', fontSize:15, fontWeight:600, flexShrink:0 }}>@</span><input placeholder="username" value={form.username} onChange={e=>set('username',e.target.value.replace(/\s/g,''))} style={inp} autoCapitalize="none" /></div>
               <div style={iStyle}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9aaab8" strokeWidth="2" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><input type="email" placeholder="Email address" value={form.email} onChange={e=>set('email',e.target.value)} style={inp} autoComplete="email" /></div>
               <div style={iStyle}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9aaab8" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><input type="password" placeholder="Password (min 6 characters)" value={form.password} onChange={e=>set('password',e.target.value)} style={inp} autoComplete="new-password" /></div>
+              <div style={iStyle}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9aaab8" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><input type="password" placeholder="Confirm password" value={form.confirmPassword} onChange={e=>set('confirmPassword',e.target.value)} style={inp} autoComplete="new-password" /></div>
             </div>
           </div>
         )}
@@ -115,11 +111,19 @@ export default function SignUp({ onBack }) {
           <button onClick={next} disabled={loading} style={{ width:'100%', height:52, borderRadius:14, background:'linear-gradient(135deg,#008080,#00c853)', color:'#fff', fontSize:15, fontWeight:700, letterSpacing:1, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(0,128,128,0.3)', border:'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.8 : 1, fontFamily:'inherit' }}>
             {loading ? <span style={{ width:20, height:20, border:'2.5px solid rgba(255,255,255,.3)', borderTopColor:'#fff', borderRadius:'50%', animation:'spin .7s linear infinite', display:'inline-block' }}/> : step === 3 ? 'Start Training' : 'Continue'}
           </button>
-          <button onClick={step === 1 ? onBack : () => setStep(s=>s-1)} style={{ background:'none', border:'none', color:'#9aaab8', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-            {step === 1 ? '← Back to Sign In' : '← Back'}
-          </button>
+          {step > 1 && (
+            <button onClick={() => setStep(s=>s-1)} style={{ background:'none', border:'none', color:'#9aaab8', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+              Back
+            </button>
+          )}
         </div>
-      </div>
+
+        {step === 1 && (
+          <p style={{ textAlign:'center', fontSize:13, color:'#9aaab8', marginTop:20 }}>
+            Already have an account?{' '}
+            <button type="button" onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer', fontSize:13, color:'#008080', fontWeight:700, fontFamily:'inherit', padding:0 }}>Sign In</button>
+          </p>
+        )}
     </div>
   )
 }
