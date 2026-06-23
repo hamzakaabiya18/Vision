@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { VisionLockup } from './Brand'
+import ActivityDetail from './ActivityDetail'
+import RouteDetail    from './RouteDetail'
 import Home        from './tabs/Home'
 import Explore     from './tabs/Explore'
 import AddActivity from './tabs/AddActivity'
@@ -8,6 +10,9 @@ import Messages    from './tabs/Messages'
 import Profile     from './tabs/Profile'
 import Stats       from './tabs/Stats'
 import Groups      from './tabs/Groups'
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+function isRealId(id) { return typeof id === 'string' && /^[0-9a-f]{24}$/i.test(id) }
 
 function NavIcon({ name, active }) {
   const c = active ? '#008080' : '#9aaab8'
@@ -107,17 +112,24 @@ export default function AppLayout() {
   const { currentUser, logout } = useAuth()
   const user = currentUser
 
-  const [tab,      setTab]      = useState('home')
-  const [unread,   setUnread]   = useState(2)
-  const [toast,    setToast]    = useState(null)
-  const [isMobile, setIsMobile] = useState(false)
+  const [tab,         setTab]         = useState('home')
+  const [unread,      setUnread]      = useState(2)
+  const [toast,       setToast]       = useState(null)
+  const [isMobile,    setIsMobile]    = useState(false)
+  const [activeActivity, setActiveActivity] = useState(null)
+  const [activeRoute,    setActiveRoute]    = useState(null)
+  const [viewProfileId,  setViewProfileId]  = useState(null)
 
   useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
     const mq = window.matchMedia('(max-width: 768px)')
-    setIsMobile(mq.matches)
-    const h = e => setIsMobile(e.matches)
-    mq.addEventListener('change', h)
-    return () => mq.removeEventListener('change', h)
+    mq.addEventListener('change', check)
+    window.addEventListener('resize', check)
+    return () => {
+      mq.removeEventListener('change', check)
+      window.removeEventListener('resize', check)
+    }
   }, [])
 
   useEffect(() => {
@@ -145,29 +157,92 @@ export default function AppLayout() {
     setTimeout(() => logout(), 700)
   }, [logout, showToast])
 
+  const handleOpenActivity = useCallback((item) => setActiveActivity(item), [])
+  const handleOpenRoute    = useCallback((item) => setActiveRoute(item), [])
+  const handleOpenProfile  = useCallback((userId) => setViewProfileId(userId), [])
+  const closeProfileView   = useCallback(() => setViewProfileId(null), [])
+
+  const handleSaveRoute = useCallback(async (route) => {
+    const token = localStorage.getItem('vision_token')
+    try {
+      const res = await fetch(`${API}/routes/${route._id}/save`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } })
+      const data = await res.json()
+      showToast(data.saved ? 'Route saved' : 'Route removed from saved', 'success')
+    } catch { showToast('Could not update saved route', 'error') }
+  }, [showToast])
+
+  const handleStartRoute = useCallback((route) => {
+    setActiveRoute(null)
+    showToast(`Let's go! Track "${route.title}" from Add Activity`, 'success')
+    setTab('add')
+  }, [showToast])
+
+  const handleLike = useCallback(async (item) => {
+    if (!isRealId(item._id)) return
+    const token = localStorage.getItem('vision_token')
+    try { await fetch(`${API}/activities/${item._id}/like`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } }) }
+    catch {}
+  }, [])
+
+  const handlePostComment = useCallback(async (item, body) => {
+    if (!isRealId(item._id)) { showToast('Comment posted (demo activity)'); return }
+    const token = localStorage.getItem('vision_token')
+    try {
+      await fetch(`${API}/activities/${item._id}/comment`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ body }) })
+      showToast('Comment posted', 'success')
+    } catch { showToast('Could not post comment', 'error') }
+  }, [showToast])
+
   function renderContent() {
+    if (viewProfileId) {
+      return <Profile user={user} viewUserId={viewProfileId} onBack={closeProfileView} onOpenActivity={handleOpenActivity} showToast={showToast} />
+    }
     switch (tab) {
-      case 'home':     return <Home        user={user} onNav={go} showToast={showToast} />
-      case 'explore':  return <Explore     user={user} showToast={showToast} />
+      case 'home':     return <Home        user={user} onNav={go} showToast={showToast} isMobile={isMobile} onOpenActivity={handleOpenActivity} onOpenProfile={handleOpenProfile} />
+      case 'explore':  return <Explore     user={user} showToast={showToast} isMobile={isMobile} onOpenActivity={handleOpenActivity} onOpenRoute={handleOpenRoute} />
       case 'groups':   return <Groups      user={user} showToast={showToast} />
-      case 'add':      return <AddActivity onBack={()=>setTab('home')} user={user} showToast={showToast} />
-      case 'messages': return <Messages    user={user} showToast={showToast} />
+      case 'add':      return <AddActivity onDone={()=>setTab('home')} user={user} showToast={showToast} />
+      case 'messages': return <Messages    user={user} showToast={showToast} isMobile={isMobile} />
       case 'stats':    return <Stats       user={user} onBack={()=>setTab('profile')} />
-      case 'profile':  return <Profile     user={user} onLogout={handleLogout} onStats={()=>setTab('stats')} showToast={showToast} />
-      default:         return <Home        user={user} onNav={go} showToast={showToast} />
+      case 'profile':  return <Profile     user={user} onLogout={handleLogout} onStats={()=>setTab('stats')} showToast={showToast} onOpenActivity={handleOpenActivity} onOpenRoute={handleOpenRoute} />
+      default:         return <Home        user={user} onNav={go} showToast={showToast} isMobile={isMobile} onOpenActivity={handleOpenActivity} onOpenProfile={handleOpenProfile} />
     }
   }
+
+  const wideTab = tab === 'home' || tab === 'messages' || tab === 'explore'
 
   if (!isMobile) {
     return (
       <div style={{ display:'flex', height:'100vh', background:'#F0FAFA', overflow:'hidden' }}>
         <DesktopSidebar tab={tab} onNav={go} unread={unread} user={user} onLogout={handleLogout} />
-        <main style={{ flex:1, overflowY:'auto', overflowX:'hidden' }} key={tab}>
-          <div style={{ maxWidth: tab === 'home' ? 860 : 740, margin:'0 auto', minHeight:'100%', padding: tab === 'messages' ? 0 : '0 0 40px' }}>
+        <main style={{ flex:1, overflowY: tab === 'messages' ? 'hidden' : 'auto', overflowX:'hidden' }} key={tab}>
+          <div style={{ maxWidth: wideTab ? 1180 : 740, margin:'0 auto', minHeight:'100%', height: tab === 'messages' ? '100%' : 'auto', padding: wideTab ? 0 : '0 0 40px' }}>
             {renderContent()}
           </div>
         </main>
         {toast && <Toast toast={toast} />}
+        {activeActivity && (
+          <ActivityDetail
+            activity={activeActivity}
+            currentUserId={user?._id || user?.id}
+            user={user}
+            onClose={() => setActiveActivity(null)}
+            onLike={handleLike}
+            onPostComment={handlePostComment}
+            onOpenProfile={(item) => { setActiveActivity(null); handleOpenProfile(item.user?._id || item.user?.id) }}
+            showToast={showToast}
+          />
+        )}
+        {activeRoute && (
+          <RouteDetail
+            route={activeRoute}
+            currentUserId={user?._id || user?.id}
+            onClose={() => setActiveRoute(null)}
+            onSaveToggle={handleSaveRoute}
+            onStartRoute={handleStartRoute}
+            showToast={showToast}
+          />
+        )}
       </div>
     )
   }
@@ -203,6 +278,28 @@ export default function AppLayout() {
           )
         })}
       </nav>
+      {activeActivity && (
+        <ActivityDetail
+          activity={activeActivity}
+          currentUserId={user?._id || user?.id}
+          user={user}
+          onClose={() => setActiveActivity(null)}
+          onLike={handleLike}
+          onPostComment={handlePostComment}
+          onOpenProfile={(item) => { setActiveActivity(null); handleOpenProfile(item.user?._id || item.user?.id) }}
+          showToast={showToast}
+        />
+      )}
+      {activeRoute && (
+        <RouteDetail
+          route={activeRoute}
+          currentUserId={user?._id || user?.id}
+          onClose={() => setActiveRoute(null)}
+          onSaveToggle={handleSaveRoute}
+          onStartRoute={handleStartRoute}
+          showToast={showToast}
+        />
+      )}
     </div>
   )
 }

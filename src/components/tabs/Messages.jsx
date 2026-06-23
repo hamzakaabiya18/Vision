@@ -69,7 +69,7 @@ function NewChatModal({ onClose, onStart, existingIds = [] }) {
   )
 }
 
-function ChatThread({ convo, messages, onBack, onSend, showToast }) {
+function ChatThread({ convo, messages, onBack, onSend, showToast, isMobile = true }) {
   const [input,  setInput]  = useState('')
   const [typing, setTyping] = useState(false)
   const bottomRef = useRef(null)
@@ -86,10 +86,12 @@ function ChatThread({ convo, messages, onBack, onSend, showToast }) {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:'#F0FAFA' }}>
-      <div style={{ background:'#fff', padding:'50px 16px 12px', display:'flex', alignItems:'center', gap:12, boxShadow:'0 2px 8px rgba(0,128,128,.06)', flexShrink:0 }}>
-        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', padding:4 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
+      <div style={{ background:'#fff', padding: isMobile ? '50px 16px 12px' : '20px 20px', display:'flex', alignItems:'center', gap:12, boxShadow:'0 2px 8px rgba(0,128,128,.06)', flexShrink:0 }}>
+        {isMobile && (
+          <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', padding:4 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+        )}
         <div style={{ position:'relative' }}>
           <img src={convo.avatar} alt={convo.name} style={{ width:40, height:40, borderRadius:'50%', objectFit:'cover' }} onError={e=>{e.target.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80'}} />
           {convo.online && <span style={{ position:'absolute', bottom:1, right:1, width:10, height:10, borderRadius:'50%', background:'#00c853', border:'2px solid #fff' }} />}
@@ -135,7 +137,7 @@ function ChatThread({ convo, messages, onBack, onSend, showToast }) {
   )
 }
 
-export default function Messages({ user, showToast }) {
+export default function Messages({ user, showToast, isMobile = true }) {
   const [convos,  setConvos]  = useState(SEED_CONVOS)
   const [msgs,    setMsgs]    = useState(SEED_MSGS)
   const [active,  setActive]  = useState(null)
@@ -170,11 +172,11 @@ export default function Messages({ user, showToast }) {
   const filtered = convos.filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
   const totalUnread = convos.reduce((s, c) => s + (c.unread || 0), 0)
 
-  if (active) return <ChatThread convo={active} messages={msgs[active.id]||[]} onBack={() => setActive(null)} onSend={handleSend} showToast={showToast} />
+  if (isMobile && active) return <ChatThread convo={active} messages={msgs[active.id]||[]} onBack={() => setActive(null)} onSend={handleSend} showToast={showToast} isMobile />
 
-  return (
-    <div style={{ background:'#F0FAFA', minHeight:'100%' }}>
-      <div style={{ padding:'52px 16px 14px' }}>
+  const listPanel = (
+    <div style={{ background:'#F0FAFA', minHeight:'100%', height: isMobile ? 'auto' : '100%', overflowY: isMobile ? 'visible' : 'auto' }}>
+      <div style={{ padding: isMobile ? '52px 16px 14px' : '24px 16px 14px' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
           <div>
             <h1 style={{ fontSize:24, fontWeight:800, color:'#1a1a2e', lineHeight:1 }}>Messages</h1>
@@ -218,7 +220,7 @@ export default function Messages({ user, showToast }) {
           </div>
         )}
         {filtered.map((c, i) => (
-          <button key={c.id} onClick={() => openConvo(c)} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'13px 16px', background:'none', border:'none', borderBottom: i<filtered.length-1 ? '1px solid #e8f4f4' : 'none', cursor:'pointer', textAlign:'left' }}>
+          <button key={c.id} onClick={() => openConvo(c)} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'13px 16px', background: !isMobile && active?.id===c.id ? '#f0fafa' : 'none', border:'none', borderBottom: i<filtered.length-1 ? '1px solid #e8f4f4' : 'none', cursor:'pointer', textAlign:'left' }}>
             <div style={{ position:'relative', flexShrink:0 }}>
               <img src={c.avatar} alt={c.name} style={{ width:52, height:52, borderRadius:'50%', objectFit:'cover' }} onError={e=>{e.target.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80'}} />
               {c.online && <span style={{ position:'absolute', bottom:2, right:2, width:12, height:12, borderRadius:'50%', background:'#00c853', border:'2.5px solid #fff' }} />}
@@ -238,6 +240,26 @@ export default function Messages({ user, showToast }) {
       </div>
 
       {newChat && <NewChatModal onClose={() => setNewChat(false)} onStart={startNewChat} existingIds={convos.map(c=>c.userId)} />}
+    </div>
+  )
+
+  if (isMobile) return listPanel
+
+  return (
+    <div style={{ display:'flex', height:'100%', background:'#F0FAFA' }}>
+      <div style={{ width:380, flexShrink:0, height:'100%', overflowY:'auto', borderRight:'1px solid #e8f4f4' }}>
+        {listPanel}
+      </div>
+      <div style={{ flex:1, height:'100%', overflow:'hidden' }}>
+        {active ? (
+          <ChatThread convo={active} messages={msgs[active.id]||[]} onBack={() => setActive(null)} onSend={handleSend} showToast={showToast} isMobile={false} />
+        ) : (
+          <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10 }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c0d8d8" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <p style={{ fontSize:14, color:'#9aaab8', fontWeight:600 }}>Select a conversation to start chatting</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

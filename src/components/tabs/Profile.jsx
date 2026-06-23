@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -22,14 +22,86 @@ function TypeBadge({ type }) {
   return <span style={{ background:bg, color, fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:6, letterSpacing:.3 }}>{label}</span>
 }
 
-export default function Profile({ user: propUser, onLogout, onStats, showToast }) {
+export default function Profile({ user: propUser, onLogout, onStats, showToast, viewUserId, onBack, onOpenActivity, onOpenRoute }) {
   const { currentUser, updateUser } = useAuth()
-  const user = currentUser || propUser
+  const isOtherUser = Boolean(viewUserId) && viewUserId !== (currentUser?._id || currentUser?.id)
+
+  const [otherUser,     setOtherUser]    = useState(null)
+  const [otherLoading,  setOtherLoading] = useState(isOtherUser)
+  const [otherActs,     setOtherActs]    = useState([])
+  const [isFollowingThem, setFollowing]  = useState(false)
+  const [savedRoutes,   setSavedRoutes]  = useState([])
+  const [savedLoading,  setSavedLoading] = useState(false)
+
+  useEffect(() => {
+    if (isOtherUser) return
+    const token = localStorage.getItem('vision_token')
+    setSavedLoading(true)
+    fetch(`${API}/routes/saved`, { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.routes) setSavedRoutes(d.routes) })
+      .catch(() => {})
+      .finally(() => setSavedLoading(false))
+  }, [isOtherUser])
+
+  async function unsaveRoute(routeId) {
+    setSavedRoutes(rs => rs.filter(r => r._id !== routeId))
+    try {
+      const token = localStorage.getItem('vision_token')
+      await fetch(`${API}/routes/${routeId}/save`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } })
+      showToast?.('Route removed from saved', 'success')
+    } catch { showToast?.('Could not remove route', 'error') }
+  }
+
+  useEffect(() => {
+    if (!isOtherUser) return
+    const token = localStorage.getItem('vision_token')
+    setOtherLoading(true)
+    Promise.all([
+      fetch(`${API}/users/${viewUserId}`, { headers:{ Authorization:`Bearer ${token}` } }).then(r => r.ok ? r.json() : null),
+      fetch(`${API}/users/${viewUserId}/activities`, { headers:{ Authorization:`Bearer ${token}` } }).then(r => r.ok ? r.json() : null),
+    ]).then(([u, a]) => {
+      if (u) {
+        setOtherUser(u)
+        setFollowing((u.followers || []).some(f => (f._id || f) === (currentUser?._id || currentUser?.id)))
+      }
+      if (a?.activities) setOtherActs(a.activities)
+    }).catch(() => {}).finally(() => setOtherLoading(false))
+  }, [isOtherUser, viewUserId, currentUser])
+
+  async function toggleFollow() {
+    const token = localStorage.getItem('vision_token')
+    setFollowing(f => !f)
+    try {
+      const res = await fetch(`${API}/users/${viewUserId}/follow`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } })
+      const data = await res.json()
+      if (typeof data.following === 'boolean') setFollowing(data.following)
+    } catch { setFollowing(f => !f) }
+  }
+
+  const user = isOtherUser ? otherUser : (currentUser || propUser)
 
   const [tab,           setTab]          = useState('activities')
   const [editing,       setEditing]      = useState(false)
   const [logoutConfirm, setLogoutConfirm]= useState(false)
   const [editForm,      setEditForm]     = useState(null)
+
+  if (isOtherUser && otherLoading) {
+    return (
+      <div style={{ background:'#F0FAFA', minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ width:36, height:36, borderRadius:'50%', border:'3px solid #e8f4f4', borderTopColor:'#008080', animation:'spin .8s linear infinite' }} />
+      </div>
+    )
+  }
+
+  if (isOtherUser && !otherLoading && !otherUser) {
+    return (
+      <div style={{ background:'#F0FAFA', minHeight:'100%', padding:'60px 24px', textAlign:'center' }}>
+        <p style={{ fontSize:15, color:'#9aaab8', marginBottom:16 }}>This athlete could not be found.</p>
+        <button onClick={onBack} style={{ padding:'10px 22px', borderRadius:14, background:'#008080', color:'#fff', border:'none', fontWeight:600, cursor:'pointer' }}>Go Back</button>
+      </div>
+    )
+  }
 
   function openEdit() {
     setEditForm({ fullName: user?.fullName || '', username: user?.username || '', bio: user?.bio || '' })
@@ -65,7 +137,12 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast }
     <div style={{ background:'#F0FAFA', minHeight:'100%', paddingBottom:24 }}>
       <div style={{ background:'linear-gradient(175deg,#004444 0%,#008080 100%)', padding:'52px 0 0', position:'relative', overflow:'hidden' }}>
         <svg style={{ position:'absolute', top:-40, right:-40, opacity:.08 }} width="220" height="220" viewBox="0 0 220 220"><circle cx="110" cy="110" r="110" fill="#00E676"/></svg>
-        <div style={{ display:'flex', justifyContent:'flex-end', padding:'0 16px 10px' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', padding:'0 16px 10px' }}>
+          {isOtherUser ? (
+            <button onClick={onBack} style={{ width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,.12)', border:'none', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+          ) : <span />}
         </div>
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', paddingBottom:28 }}>
           <img src={avatarSrc} alt={displayName} style={{ width:90, height:90, borderRadius:'50%', objectFit:'cover', border:'3px solid rgba(255,255,255,.35)', marginBottom:14 }} onError={e=>{ e.target.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=008080&color=fff&size=160` }} />
@@ -81,18 +158,27 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast }
             ))}
           </div>
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={openEdit} style={{ display:'flex', alignItems:'center', gap:7, padding:'0 18px', height:38, borderRadius:12, background:'rgba(255,255,255,.12)', border:'1.5px solid rgba(255,255,255,.3)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Edit Profile
-            </button>
-            <button onClick={() => showToast?.('Settings coming soon')} style={{ display:'flex', alignItems:'center', gap:7, padding:'0 18px', height:38, borderRadius:12, background:'rgba(255,255,255,.12)', border:'1.5px solid rgba(255,255,255,.3)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              Settings
-            </button>
+            {isOtherUser ? (
+              <button onClick={toggleFollow} style={{ display:'flex', alignItems:'center', gap:7, padding:'0 24px', height:38, borderRadius:12, background: isFollowingThem ? 'rgba(255,255,255,.12)' : '#00E676', border: isFollowingThem ? '1.5px solid rgba(255,255,255,.3)' : 'none', color: isFollowingThem ? '#fff' : '#003d3d', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                {isFollowingThem ? 'Following' : 'Follow'}
+              </button>
+            ) : (
+              <>
+                <button onClick={openEdit} style={{ display:'flex', alignItems:'center', gap:7, padding:'0 18px', height:38, borderRadius:12, background:'rgba(255,255,255,.12)', border:'1.5px solid rgba(255,255,255,.3)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit Profile
+                </button>
+                <button onClick={() => showToast?.('Settings coming soon')} style={{ display:'flex', alignItems:'center', gap:7, padding:'0 18px', height:38, borderRadius:12, background:'rgba(255,255,255,.12)', border:'1.5px solid rgba(255,255,255,.3)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  Settings
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
+      {!isOtherUser && (
       <div style={{ margin:'0 16px', marginTop:-18, background:'#fff', borderRadius:20, padding:'18px 20px', boxShadow:'0 4px 20px rgba(0,128,128,.12)', border:'1px solid #e8f4f4', position:'relative', zIndex:2 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
           <p style={{ fontSize:13, fontWeight:700, color:'#1a1a2e' }}>Weekly Metrics</p>
@@ -107,17 +193,37 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast }
           ))}
         </div>
       </div>
+      )}
 
       <div style={{ display:'flex', gap:0, margin:'20px 16px 16px', background:'#fff', borderRadius:14, padding:4, boxShadow:'0 2px 8px rgba(0,128,128,.06)' }}>
-        {['activities','stats','badges'].map(t => (
+        {['activities','routes','stats','badges'].filter(t => !(isOtherUser && (t==='stats' || t==='routes'))).map(t => (
           <button key={t} onClick={() => { if (t==='stats' && onStats) { onStats(); return } setTab(t) }} style={{ flex:1, height:38, borderRadius:10, background: tab===t ? 'linear-gradient(135deg,#008080,#00c853)' : 'transparent', color: tab===t ? '#fff' : '#9aaab8', fontSize:12, fontWeight:700, border:'none', cursor:'pointer', textTransform:'capitalize', transition:'all .2s' }}>
-            {t}
+            {t === 'routes' ? 'Saved Routes' : t}
           </button>
         ))}
       </div>
 
       <div style={{ padding:'0 16px' }}>
-        {tab === 'activities' && (
+        {tab === 'activities' && isOtherUser && (
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <span style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>Activities</span>
+            {otherActs.length === 0 && (
+              <div style={{ textAlign:'center', padding:'30px 16px', background:'#fff', borderRadius:18, border:'1px solid #e8f4f4' }}>
+                <p style={{ fontSize:13, color:'#9aaab8' }}>No public activities yet.</p>
+              </div>
+            )}
+            {otherActs.map(a => (
+              <button key={a._id} onClick={() => onOpenActivity?.(a)} style={{ background:'#fff', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4', textAlign:'left', cursor:'pointer', padding:0 }}>
+                {a.imageUrl && <div style={{ height:140 }}><img src={a.imageUrl} alt={a.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} /></div>}
+                <div style={{ padding:'12px 14px' }}>
+                  <p style={{ fontSize:14, fontWeight:700, color:'#1a1a2e' }}>{a.title}</p>
+                  <p style={{ fontSize:11, color:'#9aaab8', marginTop:2 }}>{a.distanceKm ? `${a.distanceKm} km` : ''} {a.durationMinutes ? `· ${a.durationMinutes}m` : ''}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+        {tab === 'activities' && !isOtherUser && (
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
               <span style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>Past Activities</span>
@@ -141,6 +247,38 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast }
                       <p style={{ fontSize:10, color:'#9aaab8' }}>{st.label}</p>
                     </div>
                   ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === 'routes' && !isOtherUser && (
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <span style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>Saved Routes</span>
+            {savedLoading && (
+              <div style={{ textAlign:'center', padding:'24px 0' }}><div style={{ width:30, height:30, borderRadius:'50%', border:'3px solid #e8f4f4', borderTopColor:'#008080', animation:'spin .8s linear infinite', margin:'0 auto' }} /></div>
+            )}
+            {!savedLoading && savedRoutes.length === 0 && (
+              <div style={{ textAlign:'center', padding:'30px 16px', background:'#fff', borderRadius:18, border:'1px solid #e8f4f4' }}>
+                <p style={{ fontSize:13, color:'#9aaab8' }}>No saved routes yet — explore the map to find some.</p>
+              </div>
+            )}
+            {savedRoutes.map(r => (
+              <div key={r._id} style={{ background:'#fff', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4' }}>
+                <button onClick={() => onOpenRoute?.(r)} style={{ display:'block', width:'100%', background:'none', border:'none', padding:0, cursor:'pointer', textAlign:'left' }}>
+                  <div style={{ position:'relative', height:120 }}>
+                    <img src={r.imageUrl} alt={r.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{e.target.style.display='none'}} />
+                    <div style={{ position:'absolute', inset:0, background:'linear-gradient(0deg,rgba(0,0,0,.55) 0%,transparent 55%)' }} />
+                    <div style={{ position:'absolute', bottom:10, left:12 }}>
+                      <p style={{ fontSize:14, fontWeight:800, color:'#fff' }}>{r.title}</p>
+                      <p style={{ fontSize:11, color:'rgba(255,255,255,.8)' }}>{r.city} · {r.distanceKm} km</p>
+                    </div>
+                  </div>
+                </button>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 14px' }}>
+                  <span style={{ fontSize:11, fontWeight:700, color:'#9aaab8', textTransform:'capitalize' }}>{r.difficulty}</span>
+                  <button onClick={() => unsaveRoute(r._id)} style={{ fontSize:12, color:'#e53935', fontWeight:700, background:'none', border:'none', cursor:'pointer' }}>Unsave</button>
                 </div>
               </div>
             ))}
