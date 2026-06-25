@@ -122,7 +122,7 @@ export default function Settings({ user, onClose, onLogout, showToast }) {
   const btnStyle = { height:42, borderRadius:10, background:'linear-gradient(135deg,#008080,#00c853)', color:'#fff', fontSize:13, fontWeight:700, border:'none', cursor:'pointer', padding:'0 18px' }
 
   return (
-    <div style={{ position:'fixed', inset:0, background:bg, zIndex:1200, overflowY:'auto', color:fg, transition:'background .2s,color .2s' }}>
+    <div style={{ position:'fixed', inset:0, background:bg, zIndex:1200, overflowY:'auto', color:fg }}>
       <div style={{ display:'flex', alignItems:'center', gap:12, padding:'20px 18px', borderBottom:`1px solid ${border}`, position:'sticky', top:0, background:bg, zIndex:2 }}>
         <button onClick={onClose} style={{ width:36, height:36, borderRadius:'50%', background:cardBg, border:'none', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>

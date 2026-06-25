@@ -193,8 +193,11 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
 
   const mediaItems = myActs.filter(a => a.imageUrl || a.videoUrl)
 
+  const dark = !isOtherUser && user?.settings?.appearance === 'dark'
+  const pageBg = dark ? '#0d1f1a' : '#F0FAFA'
+
   return (
-    <div style={{ background:'#F0FAFA', minHeight:'100%', paddingBottom:24 }}>
+    <div style={{ background:pageBg, minHeight:'100%', paddingBottom:24 }}>
       <div style={{ background:'linear-gradient(175deg,#004444 0%,#008080 100%)', padding:'52px 0 0', position:'relative', overflow:'hidden' }}>
         <svg style={{ position:'absolute', top:-40, right:-40, opacity:.08 }} width="220" height="220" viewBox="0 0 220 220"><circle cx="110" cy="110" r="110" fill="#00E676"/></svg>
         <div style={{ display:'flex', justifyContent:'space-between', padding:'0 16px 10px' }}>

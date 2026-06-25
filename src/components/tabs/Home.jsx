@@ -245,7 +245,12 @@ export default function Home({ user, onNav, showToast, isMobile = true, onOpenAc
     setLoadingFeed(true)
     fetch(`${API}/activities/feed?limit=20`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.activities?.length) setFeed(d.activities) })
+      .then(d => {
+        const real = d?.activities || []
+        // Real activities always come first; seed activities fill in below so the
+        // feed never looks sparse, especially for brand-new accounts with few posts.
+        setFeed(real.length > 0 ? [...real, ...SEED_FEED] : SEED_FEED)
+      })
       .catch(() => {})
       .finally(() => setLoadingFeed(false))
   }, [])

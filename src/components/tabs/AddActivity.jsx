@@ -15,67 +15,81 @@ const SPORTS = [
 ]
 
 function SportIcon({ type, size = 28, color = '#fff' }) {
-  const common = { width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:color, strokeWidth:1.8, strokeLinecap:'round', strokeLinejoin:'round' }
+  const common = { width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:color, strokeWidth:2.2, strokeLinecap:'round', strokeLinejoin:'round' }
   switch (type) {
     case 'running':
+      // Sprinting figure, clearly distinct silhouette
       return (
         <svg {...common}>
-          <circle cx="15.5" cy="4.5" r="1.8" fill={color} stroke="none"/>
-          <path d="M13 7.5l-2.2 3.2 2.6 2.3-.7 5.8M13 7.5l3 1.6 2.6 3.2M10.8 10.7l-3.8 1 .4 2.1 4-.6M12.7 13l-3.4 3.6 1.6 3.9"/>
+          <circle cx="14.5" cy="3.8" r="1.9" fill={color} stroke="none"/>
+          <path d="M10 21l1.8-5.5-2.3-2.3 1.3-4.7 2.6 2 3.4-1.3M13.4 10.8l2.4 1.6 3.2-1M9.5 13.3l-4 1.4"/>
         </svg>
       )
     case 'cycling':
+      // Two wheels + frame, instantly recognizable bike shape
       return (
         <svg {...common}>
-          <circle cx="6" cy="17" r="3.2"/>
-          <circle cx="18" cy="17" r="3.2"/>
-          <path d="M6 17l4-7h4l3 5M10 10l2-3h3M12 17h6"/>
-          <circle cx="13.5" cy="5.5" r="1.5" fill={color} stroke="none"/>
+          <circle cx="5.5" cy="17.5" r="3.5"/>
+          <circle cx="18.5" cy="17.5" r="3.5"/>
+          <path d="M5.5 17.5L10 9h4l4.5 8.5M10 9l2.5 4.5h5.5M10 9L8 6h-2"/>
         </svg>
       )
     case 'hiking':
+      // Mountain peak with a flag/path marker
       return (
         <svg {...common}>
-          <circle cx="14" cy="4.5" r="1.7" fill={color} stroke="none"/>
-          <path d="M9 21l2.2-7.5-2-2.2L11 7.5h3l2 3.3 3 1.7M11 13.5l3.3 1.2L17 21M9 21h2.6M14.5 21h2.8"/>
+          <path d="M3 19h18"/>
+          <path d="M5 19l5-11 3 5 2-3 4 9z"/>
+          <circle cx="13" cy="6.5" r="1.6" fill={color} stroke="none"/>
         </svg>
       )
     case 'swimming':
+      // Wave lines + diver figure
       return (
         <svg {...common}>
-          <circle cx="17" cy="5" r="1.7" fill={color} stroke="none"/>
-          <path d="M5 13.5l3-2.5 3 1.8 3-3.2 3 2.4 2-1.5"/>
-          <path d="M3 18c1.4 1.2 2.8 1.2 4.2 0 1.4-1.2 2.8-1.2 4.2 0 1.4 1.2 2.8 1.2 4.2 0 1.4-1.2 2.8-1.2 4.2 0"/>
+          <circle cx="6" cy="6" r="1.8" fill={color} stroke="none"/>
+          <path d="M6 8l3 3-1 4 4 1"/>
+          <path d="M2 18c1.6 1.3 3.2 1.3 4.8 0 1.6 1.3 3.2 1.3 4.8 0 1.6 1.3 3.2 1.3 4.8 0 1.6 1.3 3.2 1.3 4.8 0" strokeWidth="2"/>
         </svg>
       )
     case 'gym':
+      // Barbell — unmistakably gym
       return (
         <svg {...common}>
-          <path d="M6.5 9v6M17.5 9v6M3.5 11v2M20.5 11v2M6.5 12h11"/>
-          <rect x="2" y="10.2" width="2.6" height="3.6" rx="0.6" fill={color} stroke="none"/>
-          <rect x="19.4" y="10.2" width="2.6" height="3.6" rx="0.6" fill={color} stroke="none"/>
+          <path d="M2 12h20" strokeWidth="2.4"/>
+          <rect x="1" y="9" width="3" height="6" rx="1" fill={color} stroke="none"/>
+          <rect x="20" y="9" width="3" height="6" rx="1" fill={color} stroke="none"/>
+          <rect x="5" y="7" width="2.4" height="10" rx="1" fill={color} stroke="none"/>
+          <rect x="16.6" y="7" width="2.4" height="10" rx="1" fill={color} stroke="none"/>
         </svg>
       )
     case 'yoga':
+      // Seated lotus pose silhouette
       return (
         <svg {...common}>
-          <circle cx="12" cy="4.5" r="1.7" fill={color} stroke="none"/>
-          <path d="M12 7v4M12 11l-5 6M12 11l5 6M7 11h10M9 21h6"/>
+          <circle cx="12" cy="5" r="1.9" fill={color} stroke="none"/>
+          <path d="M12 7.5v4.5"/>
+          <path d="M12 12l-6 3M12 12l6 3M6 15l2.5-1.5M18 15l-2.5-1.5"/>
+          <path d="M5.5 19h13"/>
         </svg>
       )
     case 'skiing':
+      // Skis + poles, slanted descent
       return (
         <svg {...common}>
-          <circle cx="14.5" cy="4.5" r="1.7" fill={color} stroke="none"/>
-          <path d="M11 7.3l-1.5 3.6 2.6 2-1 3.4M11 7.3l3.2 1.3 2 3M3.5 19.5l6-2M14.5 17l6.5-2.2"/>
+          <circle cx="13" cy="4" r="1.8" fill={color} stroke="none"/>
+          <path d="M13 6.5v5l-3 4M13 11.5l3 2.5"/>
+          <path d="M5 19l6-2M13 17l6-2"/>
+          <path d="M9 9l-2.5 2M16 9l2.5 3"/>
         </svg>
       )
     case 'triathlon':
+      // Medal ribbon, distinct from generic running glyph
       return (
         <svg {...common}>
-          <path d="M5 20l4.5-15h5L19 20"/>
-          <path d="M8.2 14h7.6"/>
-          <circle cx="12" cy="4" r="1.7" fill={color} stroke="none"/>
+          <circle cx="12" cy="15" r="5"/>
+          <path d="M9 10.5L7 3M15 10.5l2-7.5"/>
+          <path d="M10 15l1.3 1.3L14.5 13"/>
         </svg>
       )
     default:
@@ -123,6 +137,7 @@ export default function AddActivity({ user, showToast, onDone }) {
   const [coords,    setCoords]    = useState([])
   const [saving,    setSaving]    = useState(false)
   const [note,      setNote]      = useState('')
+  const [imageUrl,  setImageUrl]  = useState('')
 
   const timerRef   = useRef(null)
   const watchRef   = useRef(null)
@@ -178,15 +193,18 @@ export default function AddActivity({ user, showToast, onDone }) {
 
   useEffect(() => () => stopTimer(), [stopTimer])
 
+  const SPORT_TYPE_MAP = { Running:'Run', Cycling:'Ride', Hiking:'Hike', Swimming:'Swim', Gym:'Gym', Yoga:'Yoga', Skiing:'Ski', Triathlon:'Run' }
+
   async function handleSave() {
     setSaving(true)
     const body = {
-      type: sport?.key,
+      sportType: SPORT_TYPE_MAP[sport?.key] || 'Run',
       title: `${sport?.key} ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}`,
-      distance: parseFloat((distM/1000).toFixed(2)),
-      duration: elapsed,
-      route: coords.length >= 2 ? { type:'LineString', coordinates: coords.map(c=>[c.lng,c.lat]) } : undefined,
+      distanceKm: parseFloat((distM/1000).toFixed(2)),
+      durationMinutes: Math.round(elapsed/60),
+      routePoints: coords.length >= 2 ? coords.map(c=>({ lat:c.lat, lng:c.lng })) : undefined,
       notes: note,
+      imageUrl: imageUrl.trim() || undefined,
     }
     try {
       const token = localStorage.getItem('vision_token')
@@ -194,13 +212,13 @@ export default function AddActivity({ user, showToast, onDone }) {
       if (!res.ok) throw new Error('Save failed')
       showToast?.('Activity saved!', 'success')
     } catch {
-      showToast?.('Saved locally (backend offline)', 'info')
+      showToast?.('Could not save — check your connection', 'error')
     }
     setSaving(false)
     onDone?.()
   }
 
-  function reset() { stopTimer(); setPhase('select'); setSport(null); setElapsed(0); setDistM(0); setCoords([]) }
+  function reset() { stopTimer(); setPhase('select'); setSport(null); setElapsed(0); setDistM(0); setCoords([]); setImageUrl(''); setNote('') }
 
   // ─── Route SVG ───────────────────────────────────────────────────────────────
   function RouteSVG({ pts, w=260, h=120 }) {
@@ -329,6 +347,28 @@ export default function AddActivity({ user, showToast, onDone }) {
       <div style={{ background:'#fff', borderRadius:20, padding:'16px 14px', marginBottom:16, boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4' }}>
         <p style={{ fontSize:13, fontWeight:700, color:'#1a1a2e', marginBottom:12 }}>Route</p>
         <RouteSVG pts={coords} w={Math.min(window.innerWidth - 60, 360)} h={160} />
+      </div>
+
+      <div style={{ background:'#fff', borderRadius:16, border:'1.5px solid #e0eeee', padding:'12px 14px', marginBottom:16 }}>
+        <p style={{ fontSize:12, color:'#9aaab8', fontWeight:600, marginBottom:10 }}>PHOTO (optional)</p>
+        {imageUrl ? (
+          <div style={{ position:'relative', borderRadius:12, overflow:'hidden', marginBottom:8 }}>
+            <img src={imageUrl} alt="Activity" style={{ width:'100%', maxHeight:220, objectFit:'cover', display:'block' }} />
+            <button onClick={() => setImageUrl('')} style={{ position:'absolute', top:8, right:8, width:28, height:28, borderRadius:'50%', background:'rgba(0,0,0,.55)', border:'none', color:'#fff', cursor:'pointer', fontSize:14 }}>✕</button>
+          </div>
+        ) : (
+          <label style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, padding:'24px 0', border:'1.5px dashed #c9e6e0', borderRadius:12, cursor:'pointer' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#008080" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <span style={{ fontSize:12, color:'#008080', fontWeight:600 }}>Add a photo</span>
+            <input type="file" accept="image/*" style={{ display:'none' }} onChange={e => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              const reader = new FileReader()
+              reader.onload = ev => setImageUrl(ev.target.result)
+              reader.readAsDataURL(file)
+            }} />
+          </label>
+        )}
       </div>
 
       <div style={{ background:'#fff', borderRadius:16, border:'1.5px solid #e0eeee', padding:'12px 14px', marginBottom:20 }}>
