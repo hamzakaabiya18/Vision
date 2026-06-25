@@ -11,8 +11,16 @@ const DEFAULT_LOCATION = { city:'Haifa', lat:32.7940, lng:34.9896 }
 
 function isRealId(id) { return typeof id === 'string' && /^[0-9a-f]{24}$/i.test(id) }
 
+const MAP_THEMES = {
+  standard:  { bg:'linear-gradient(160deg,#eaf7f4 0%,#d9efe9 60%,#cfe9e1 100%)', grid:'#bfe0d8', marker:'#00a87a', activeMarker:'#008080', label:'Standard' },
+  satellite: { bg:'linear-gradient(160deg,#0f2027 0%,#203a43 60%,#2c5364 100%)', grid:'rgba(255,255,255,.12)', marker:'#00E676', activeMarker:'#00b894', label:'Satellite' },
+  terrain:   { bg:'linear-gradient(160deg,#e8dcc4 0%,#cdbb8e 60%,#a98f5e 100%)', grid:'rgba(90,60,20,.18)', marker:'#5a7a3a', activeMarker:'#3d5a27', label:'Terrain' },
+}
+
 function ExploreMap({ routes, userLoc, cityLabel, onSelectRoute, selectedId }) {
   const W = 600, H = 340, pad = 30
+  const mapStyle = localStorage.getItem('vision_map_style') || 'standard'
+  const theme = MAP_THEMES[mapStyle] || MAP_THEMES.standard
 
   const points = useMemo(() => {
     const pts = routes
@@ -33,11 +41,11 @@ function ExploreMap({ routes, userLoc, cityLabel, onSelectRoute, selectedId }) {
   const toY = lat => H - pad - ((lat-bounds.minLat)/span) * (H-pad*2)
 
   return (
-    <div style={{ position:'relative', height:H, borderRadius:20, overflow:'hidden', background:'linear-gradient(160deg,#eaf7f4 0%,#d9efe9 60%,#cfe9e1 100%)', border:'1px solid #d4ece8' }}>
+    <div style={{ position:'relative', height:H, borderRadius:20, overflow:'hidden', background:theme.bg, border:'1px solid #d4ece8' }}>
       <svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
         <defs>
           <pattern id="gridLines" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M0 0H40M0 0V40" stroke="#bfe0d8" strokeWidth="1" />
+            <path d="M0 0H40M0 0V40" stroke={theme.grid} strokeWidth="1" />
           </pattern>
         </defs>
         <rect width={W} height={H} fill="url(#gridLines)" opacity="0.5" />
@@ -49,7 +57,7 @@ function ExploreMap({ routes, userLoc, cityLabel, onSelectRoute, selectedId }) {
           const active = r._id === selectedId
           return (
             <g key={r._id} onClick={() => onSelectRoute(r)} style={{ cursor:'pointer' }}>
-              <circle cx={x} cy={y} r={active ? 12 : 9} fill={active ? '#008080' : '#00a87a'} opacity={active ? 1 : 0.85} stroke="#fff" strokeWidth="2" />
+              <circle cx={x} cy={y} r={active ? 12 : 9} fill={active ? theme.activeMarker : theme.marker} opacity={active ? 1 : 0.85} stroke="#fff" strokeWidth="2" />
               {active && <text x={x} y={y-16} textAnchor="middle" fontSize="11" fontWeight="700" fill="#0a2a2a">{r.title}</text>}
             </g>
           )

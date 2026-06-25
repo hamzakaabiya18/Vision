@@ -9,7 +9,7 @@ import AddActivity from './tabs/AddActivity'
 import Messages    from './tabs/Messages'
 import Profile     from './tabs/Profile'
 import Stats       from './tabs/Stats'
-import Groups      from './tabs/Groups'
+import Groups, { GroupDetail } from './tabs/Groups'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 function isRealId(id) { return typeof id === 'string' && /^[0-9a-f]{24}$/i.test(id) }
@@ -118,6 +118,7 @@ export default function AppLayout() {
   const [isMobile,    setIsMobile]    = useState(false)
   const [activeActivity, setActiveActivity] = useState(null)
   const [activeRoute,    setActiveRoute]    = useState(null)
+  const [activeGroup,    setActiveGroup]    = useState(null)
   const [viewProfileId,  setViewProfileId]  = useState(null)
 
   useEffect(() => {
@@ -159,6 +160,24 @@ export default function AppLayout() {
 
   const handleOpenActivity = useCallback((item) => setActiveActivity(item), [])
   const handleOpenRoute    = useCallback((item) => setActiveRoute(item), [])
+  const handleOpenGroup    = useCallback((item) => setActiveGroup(item), [])
+
+  const handleJoinGroup = useCallback(async (groupId, isMember) => {
+    const token = localStorage.getItem('vision_token')
+    try {
+      const url = isMember ? `${API}/groups/${groupId}/leave` : `${API}/groups/${groupId}/join`
+      const res = await fetch(url, { method: isMember ? 'DELETE' : 'POST', headers:{ Authorization:`Bearer ${token}` } })
+      const data = await res.json()
+      setActiveGroup(prev => {
+        if (!prev || prev._id !== groupId) return prev
+        const members = data.joined
+          ? [...(prev.members||[]), { _id: user?._id, avatarUrl: user?.avatarUrl, fullName: user?.fullName }]
+          : (prev.members||[]).filter(m => (m._id||m) !== (user?._id || user?.id))
+        return { ...prev, members }
+      })
+      showToast(data.joined ? 'Joined group' : 'Left group', 'success')
+    } catch { showToast('Could not update group membership', 'error') }
+  }, [user, showToast])
   const handleOpenProfile  = useCallback((userId) => setViewProfileId(userId), [])
   const closeProfileView   = useCallback(() => setViewProfileId(null), [])
 
@@ -202,9 +221,9 @@ export default function AppLayout() {
       case 'explore':  return <Explore     user={user} showToast={showToast} isMobile={isMobile} onOpenActivity={handleOpenActivity} onOpenRoute={handleOpenRoute} />
       case 'groups':   return <Groups      user={user} showToast={showToast} />
       case 'add':      return <AddActivity onDone={()=>setTab('home')} user={user} showToast={showToast} />
-      case 'messages': return <Messages    user={user} showToast={showToast} isMobile={isMobile} />
-      case 'stats':    return <Stats       user={user} onBack={()=>setTab('profile')} />
-      case 'profile':  return <Profile     user={user} onLogout={handleLogout} onStats={()=>setTab('stats')} showToast={showToast} onOpenActivity={handleOpenActivity} onOpenRoute={handleOpenRoute} />
+      case 'messages': return <Messages    user={user} showToast={showToast} isMobile={isMobile} onOpenProfile={handleOpenProfile} />
+      case 'stats':    return <Stats       user={user} onBack={()=>setTab('profile')} isMobile={isMobile} onOpenProfile={handleOpenProfile} />
+      case 'profile':  return <Profile     user={user} onLogout={handleLogout} onStats={()=>setTab('stats')} showToast={showToast} onOpenActivity={handleOpenActivity} onOpenRoute={handleOpenRoute} onOpenGroup={handleOpenGroup} />
       default:         return <Home        user={user} onNav={go} showToast={showToast} isMobile={isMobile} onOpenActivity={handleOpenActivity} onOpenProfile={handleOpenProfile} />
     }
   }
@@ -240,6 +259,15 @@ export default function AppLayout() {
             onClose={() => setActiveRoute(null)}
             onSaveToggle={handleSaveRoute}
             onStartRoute={handleStartRoute}
+            showToast={showToast}
+          />
+        )}
+        {activeGroup && (
+          <GroupDetail
+            group={activeGroup}
+            currentUserId={user?._id || user?.id}
+            onClose={() => setActiveGroup(null)}
+            onJoin={handleJoinGroup}
             showToast={showToast}
           />
         )}
@@ -297,6 +325,15 @@ export default function AppLayout() {
           onClose={() => setActiveRoute(null)}
           onSaveToggle={handleSaveRoute}
           onStartRoute={handleStartRoute}
+          showToast={showToast}
+        />
+      )}
+      {activeGroup && (
+        <GroupDetail
+          group={activeGroup}
+          currentUserId={user?._id || user?.id}
+          onClose={() => setActiveGroup(null)}
+          onJoin={handleJoinGroup}
           showToast={showToast}
         />
       )}

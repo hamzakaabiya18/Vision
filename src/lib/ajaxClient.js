@@ -21,10 +21,16 @@ function ajaxRequest(method, endpoint, data) {
   })
 }
 
+function cleanParams(params) {
+  const out = {}
+  Object.entries(params || {}).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') out[k] = v })
+  return out
+}
+
 export const ajax = {
-  searchActivities: (params) => ajaxRequest('GET', '/activities/search?' + new URLSearchParams(params)),
-  searchGroups:     (params) => ajaxRequest('GET', '/groups?' + new URLSearchParams(params)),
-  searchUsers:      (params) => ajaxRequest('GET', '/users?' + new URLSearchParams(params)),
+  searchActivities: (params) => ajaxRequest('GET', '/activities/search?' + new URLSearchParams(cleanParams(params))),
+  searchGroups:     (params) => ajaxRequest('GET', '/groups?' + new URLSearchParams(cleanParams(params))),
+  searchUsers:      (params) => ajaxRequest('GET', '/users?' + new URLSearchParams(cleanParams(params))),
   getStats:         ()       => ajaxRequest('GET', '/stats/me'),
   getGlobalStats:   ()       => ajaxRequest('GET', '/stats/global'),
   postComment:      (id, body) => ajaxRequest('POST', `/activities/${id}/comment`, body),

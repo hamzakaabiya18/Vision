@@ -1,28 +1,35 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
+import Settings from '../Settings'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
-const ACTIVITIES = [
-  { id:1, type:'Run',  title:'Trail Sunrise Run',  date:'Yesterday · 06:30 AM', dist:'12.4', time:'48:12', pace:'3:53/km', img:'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80' },
-  { id:2, type:'Gym',  title:'Upper Body Power',   date:'2 days ago · 05:45 AM', calories:'740 kcal', time:'1:15:00', img:'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80' },
-  { id:3, type:'Ride', title:'Sunset Road Ride',   date:'3 days ago · 07:12 PM', dist:'32.1', speed:'28.4 km/h', img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80' },
-]
-
-const BADGES = [
-  { label:'100 km Club',   color:'#fff7e6', accent:'#f59e0b' },
-  { label:'30-Day Streak', color:'#fff0f0', accent:'#ef4444' },
-  { label:'Early Riser',   color:'#f0f9ff', accent:'#0ea5e9' },
-  { label:'Summit Seeker', color:'#f0fdf4', accent:'#22c55e' },
-]
+function buildBadges({ activitiesCount, totalDistanceKm, followingCount, savedRoutesCount, groupsCount }) {
+  return [
+    { label:'First Activity',      desc:'Log your first activity',           unlocked: activitiesCount >= 1 },
+    { label:'10 KM Club',          desc:'Reach 10 km total distance',        unlocked: totalDistanceKm >= 10 },
+    { label:'Consistency Starter', desc:'Log 3 or more activities',          unlocked: activitiesCount >= 3 },
+    { label:'Route Explorer',      desc:'Save a route from Explore',         unlocked: savedRoutesCount >= 1 },
+    { label:'Social Athlete',      desc:'Follow another athlete',            unlocked: followingCount >= 1 },
+    { label:'Group Member',        desc:'Join or create a VISION group',     unlocked: groupsCount >= 1 },
+    { label:'VISION Pioneer',      desc:'Welcome to VISION Athletic Intelligence', unlocked: true },
+  ]
+}
 
 function TypeBadge({ type }) {
-  const map = { Run:{ bg:'rgba(0,128,128,.1)', color:'#008080', label:'Running' }, Ride:{ bg:'rgba(0,168,122,.1)', color:'#00a87a', label:'Cycling' }, Gym:{ bg:'rgba(212,86,10,.1)', color:'#d4560a', label:'Gym' } }
+  const map = {
+    Run:{ bg:'rgba(0,128,128,.1)', color:'#008080', label:'Running' },
+    Ride:{ bg:'rgba(0,168,122,.1)', color:'#00a87a', label:'Cycling' },
+    Gym:{ bg:'rgba(212,86,10,.1)', color:'#d4560a', label:'Gym' },
+    Hike:{ bg:'rgba(90,122,58,.1)', color:'#5a7a3a', label:'Hiking' },
+    Swim:{ bg:'rgba(0,85,170,.1)', color:'#0055aa', label:'Swimming' },
+    Yoga:{ bg:'rgba(123,78,160,.1)', color:'#7b4ea0', label:'Yoga' },
+  }
   const { bg, color, label } = map[type] || map.Run
   return <span style={{ background:bg, color, fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:6, letterSpacing:.3 }}>{label}</span>
 }
 
-export default function Profile({ user: propUser, onLogout, onStats, showToast, viewUserId, onBack, onOpenActivity, onOpenRoute }) {
+export default function Profile({ user: propUser, onLogout, onStats, showToast, viewUserId, onBack, onOpenActivity, onOpenRoute, onOpenGroup }) {
   const { currentUser, updateUser } = useAuth()
   const isOtherUser = Boolean(viewUserId) && viewUserId !== (currentUser?._id || currentUser?.id)
 
@@ -32,6 +39,24 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
   const [isFollowingThem, setFollowing]  = useState(false)
   const [savedRoutes,   setSavedRoutes]  = useState([])
   const [savedLoading,  setSavedLoading] = useState(false)
+  const [myGroups,      setMyGroups]     = useState([])
+  const [groupsLoading, setGroupsLoading]= useState(false)
+  const [myActs,        setMyActs]       = useState([])
+  const [myActsLoading, setMyActsLoading]= useState(false)
+  const [showSettings,  setShowSettings] = useState(false)
+
+  useEffect(() => {
+    if (isOtherUser) return
+    const token = localStorage.getItem('vision_token')
+    const myId  = currentUser?._id || currentUser?.id
+    if (!myId) return
+    setMyActsLoading(true)
+    fetch(`${API}/users/${myId}/activities`, { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.activities) setMyActs(d.activities) })
+      .catch(() => {})
+      .finally(() => setMyActsLoading(false))
+  }, [isOtherUser, currentUser])
 
   useEffect(() => {
     if (isOtherUser) return
@@ -43,6 +68,23 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
       .catch(() => {})
       .finally(() => setSavedLoading(false))
   }, [isOtherUser])
+
+  useEffect(() => {
+    if (isOtherUser) return
+    const token = localStorage.getItem('vision_token')
+    const myId  = currentUser?._id || currentUser?.id
+    setGroupsLoading(true)
+    fetch(`${API}/groups`, { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        const mine = (d?.groups || []).filter(g =>
+          (g.admin?._id || g.admin) === myId || g.members?.some(m => (m._id || m) === myId)
+        )
+        setMyGroups(mine)
+      })
+      .catch(() => {})
+      .finally(() => setGroupsLoading(false))
+  }, [isOtherUser, currentUser])
 
   async function unsaveRoute(routeId) {
     setSavedRoutes(rs => rs.filter(r => r._id !== routeId))
@@ -71,9 +113,10 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
 
   async function toggleFollow() {
     const token = localStorage.getItem('vision_token')
+    const wasFollowing = isFollowingThem
     setFollowing(f => !f)
     try {
-      const res = await fetch(`${API}/users/${viewUserId}/follow`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } })
+      const res = await fetch(`${API}/users/${viewUserId}/follow`, { method: wasFollowing ? 'DELETE' : 'POST', headers:{ Authorization:`Bearer ${token}` } })
       const data = await res.json()
       if (typeof data.following === 'boolean') setFollowing(data.following)
     } catch { setFollowing(f => !f) }
@@ -133,6 +176,23 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
   const following   = user?.followingCount ?? 0
   const activities  = user?.activitiesCount ?? 0
 
+  const myTotals = myActs.reduce((acc, a) => ({
+    km: acc.km + (a.distanceKm || 0),
+    min: acc.min + (a.durationMinutes || 0),
+    cal: acc.cal + (a.calories || 0),
+  }), { km:0, min:0, cal:0 })
+  const fmtHM = mins => { const h = Math.floor(mins/60), m = Math.round(mins%60); return h > 0 ? `${h}h ${m}m` : `${m}m` }
+
+  const badges = buildBadges({
+    activitiesCount: activities,
+    totalDistanceKm: myTotals.km,
+    followingCount: following,
+    savedRoutesCount: savedRoutes.length,
+    groupsCount: myGroups.length,
+  })
+
+  const mediaItems = myActs.filter(a => a.imageUrl || a.videoUrl)
+
   return (
     <div style={{ background:'#F0FAFA', minHeight:'100%', paddingBottom:24 }}>
       <div style={{ background:'linear-gradient(175deg,#004444 0%,#008080 100%)', padding:'52px 0 0', position:'relative', overflow:'hidden' }}>
@@ -168,7 +228,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   Edit Profile
                 </button>
-                <button onClick={() => showToast?.('Settings coming soon')} style={{ display:'flex', alignItems:'center', gap:7, padding:'0 18px', height:38, borderRadius:12, background:'rgba(255,255,255,.12)', border:'1.5px solid rgba(255,255,255,.3)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                <button onClick={() => setShowSettings(true)} style={{ display:'flex', alignItems:'center', gap:7, padding:'0 18px', height:38, borderRadius:12, background:'rgba(255,255,255,.12)', border:'1.5px solid rgba(255,255,255,.3)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                   Settings
                 </button>
@@ -180,12 +240,14 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
 
       {!isOtherUser && (
       <div style={{ margin:'0 16px', marginTop:-18, background:'#fff', borderRadius:20, padding:'18px 20px', boxShadow:'0 4px 20px rgba(0,128,128,.12)', border:'1px solid #e8f4f4', position:'relative', zIndex:2 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <p style={{ fontSize:13, fontWeight:700, color:'#1a1a2e' }}>Weekly Metrics</p>
-          <span style={{ fontSize:12, color:'#00c853', fontWeight:700 }}>+12% from last week</span>
-        </div>
+        <p style={{ fontSize:13, fontWeight:700, color:'#1a1a2e', marginBottom:12 }}>Identity Summary</p>
         <div style={{ display:'flex' }}>
-          {[{ label:'Active Time',val:'18h 42m' },{ label:'Distance',val:'87.3 km' },{ label:'Calories',val:'6,240' },{ label:'Workouts',val:'9' }].map((m,i)=>(
+          {[
+            { label:'Active Time', val: myActsLoading ? '…' : fmtHM(myTotals.min) },
+            { label:'Distance',    val: myActsLoading ? '…' : `${myTotals.km.toFixed(1)} km` },
+            { label:'Calories',    val: myActsLoading ? '…' : myTotals.cal.toLocaleString() },
+            { label:'Workouts',    val: myActsLoading ? '…' : myActs.length },
+          ].map((m,i)=>(
             <div key={m.label} style={{ flex:1, textAlign:'center', borderRight: i<3 ? '1px solid #e8f4f4' : 'none' }}>
               <p style={{ fontSize:14, fontWeight:800, color:'#1a1a2e' }}>{m.val}</p>
               <p style={{ fontSize:10, color:'#9aaab8', marginTop:2, fontWeight:500 }}>{m.label}</p>
@@ -196,9 +258,9 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
       )}
 
       <div style={{ display:'flex', gap:0, margin:'20px 16px 16px', background:'#fff', borderRadius:14, padding:4, boxShadow:'0 2px 8px rgba(0,128,128,.06)' }}>
-        {['activities','routes','stats','badges'].filter(t => !(isOtherUser && (t==='stats' || t==='routes'))).map(t => (
-          <button key={t} onClick={() => { if (t==='stats' && onStats) { onStats(); return } setTab(t) }} style={{ flex:1, height:38, borderRadius:10, background: tab===t ? 'linear-gradient(135deg,#008080,#00c853)' : 'transparent', color: tab===t ? '#fff' : '#9aaab8', fontSize:12, fontWeight:700, border:'none', cursor:'pointer', textTransform:'capitalize', transition:'all .2s' }}>
-            {t === 'routes' ? 'Saved Routes' : t}
+        {['activities','media','routes','groups','badges'].filter(t => !(isOtherUser && (t==='media' || t==='routes' || t==='groups'))).map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{ flex:1, height:38, borderRadius:10, background: tab===t ? 'linear-gradient(135deg,#008080,#00c853)' : 'transparent', color: tab===t ? '#fff' : '#9aaab8', fontSize:12, fontWeight:700, border:'none', cursor:'pointer', textTransform:'capitalize', transition:'all .2s' }}>
+            {t === 'routes' ? 'Saved Routes' : t === 'groups' ? 'My Groups' : t}
           </button>
         ))}
       </div>
@@ -225,31 +287,69 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
         )}
         {tab === 'activities' && !isOtherUser && (
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <span style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>Past Activities</span>
-              <button style={{ fontSize:12, color:'#008080', fontWeight:600, background:'none', border:'none', cursor:'pointer' }}>View All</button>
-            </div>
-            {ACTIVITIES.map(a => (
-              <div key={a.id} style={{ background:'#fff', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4' }}>
-                <div style={{ position:'relative', height:150 }}>
-                  <img src={a.img} alt={a.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                  <div style={{ position:'absolute', inset:0, background:'linear-gradient(0deg,rgba(0,0,0,.55) 0%,transparent 55%)' }} />
-                  <div style={{ position:'absolute', top:12, left:14 }}><TypeBadge type={a.type} /></div>
-                  <div style={{ position:'absolute', bottom:12, left:14 }}>
-                    <p style={{ fontSize:10, color:'rgba(255,255,255,.65)', marginBottom:2 }}>{a.date}</p>
-                    <p style={{ fontSize:16, fontWeight:700, color:'#fff' }}>{a.title}</p>
+            <span style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>My Activities</span>
+            {myActsLoading && (
+              <div style={{ textAlign:'center', padding:'24px 0' }}><div style={{ width:30, height:30, borderRadius:'50%', border:'3px solid #e8f4f4', borderTopColor:'#008080', animation:'spin .8s linear infinite', margin:'0 auto' }} /></div>
+            )}
+            {!myActsLoading && myActs.length === 0 && (
+              <div style={{ textAlign:'center', padding:'30px 16px', background:'#fff', borderRadius:18, border:'1px solid #e8f4f4' }}>
+                <p style={{ fontSize:13, color:'#9aaab8' }}>No activities yet. Start your first VISION activity.</p>
+              </div>
+            )}
+            {myActs.map(a => (
+              <button key={a._id} onClick={() => onOpenActivity?.(a)} style={{ background:'#fff', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4', textAlign:'left', cursor:'pointer', padding:0, display:'block', width:'100%' }}>
+                {a.imageUrl && (
+                  <div style={{ position:'relative', height:150 }}>
+                    <img src={a.imageUrl} alt={a.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    <div style={{ position:'absolute', inset:0, background:'linear-gradient(0deg,rgba(0,0,0,.55) 0%,transparent 55%)' }} />
+                    <div style={{ position:'absolute', top:12, left:14 }}><TypeBadge type={a.sportType} /></div>
+                    <div style={{ position:'absolute', bottom:12, left:14 }}>
+                      <p style={{ fontSize:10, color:'rgba(255,255,255,.65)', marginBottom:2 }}>{new Date(a.createdAt).toLocaleDateString()}</p>
+                      <p style={{ fontSize:16, fontWeight:700, color:'#fff' }}>{a.title}</p>
+                    </div>
                   </div>
-                </div>
+                )}
+                {!a.imageUrl && (
+                  <div style={{ padding:'14px 16px 0', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <p style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>{a.title}</p>
+                    <TypeBadge type={a.sportType} />
+                  </div>
+                )}
                 <div style={{ display:'flex', padding:'12px 0' }}>
-                  {[a.dist?{label:'Distance',val:`${a.dist} km`}:null, a.calories?{label:'Burned',val:a.calories}:null, a.speed?{label:'Avg Speed',val:a.speed}:null, a.pace?{label:'Avg Pace',val:a.pace}:null, {label:'Duration',val:a.time}].filter(Boolean).map((st,i,arr)=>(
+                  {[a.distanceKm?{label:'Distance',val:`${a.distanceKm} km`}:null, a.calories?{label:'Burned',val:`${a.calories} kcal`}:null, { label:'Duration', val: `${a.durationMinutes||0}m` }, { label:'Likes', val: a.likes?.length || 0 }].filter(Boolean).map((st,i,arr)=>(
                     <div key={i} style={{ flex:1, textAlign:'center', borderRight: i<arr.length-1 ? '1px solid #e8f4f4' : 'none' }}>
                       <p style={{ fontSize:13, fontWeight:800, color:'#1a1a2e' }}>{st.val}</p>
                       <p style={{ fontSize:10, color:'#9aaab8' }}>{st.label}</p>
                     </div>
                   ))}
                 </div>
-              </div>
+              </button>
             ))}
+          </div>
+        )}
+
+        {tab === 'media' && !isOtherUser && (
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <span style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>Media</span>
+            {mediaItems.length === 0 && (
+              <div style={{ textAlign:'center', padding:'30px 16px', background:'#fff', borderRadius:18, border:'1px solid #e8f4f4' }}>
+                <p style={{ fontSize:13, color:'#9aaab8' }}>No photos or videos yet. Add media to your next activity.</p>
+              </div>
+            )}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              {mediaItems.map(a => (
+                <button key={a._id} onClick={() => onOpenActivity?.(a)} style={{ position:'relative', height:140, borderRadius:14, overflow:'hidden', border:'none', padding:0, cursor:'pointer' }}>
+                  {a.imageUrl
+                    ? <img src={a.imageUrl} alt={a.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    : <div style={{ width:'100%', height:'100%', background:'#0a2a2a', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      </div>}
+                  <div style={{ position:'absolute', inset:0, background:'linear-gradient(0deg,rgba(0,0,0,.45) 0%,transparent 50%)' }} />
+                  <p style={{ position:'absolute', bottom:8, left:10, fontSize:12, fontWeight:700, color:'#fff', margin:0 }}>{a.title}</p>
+                  {a.videoUrl && <span style={{ position:'absolute', top:8, right:8, background:'rgba(0,0,0,.5)', color:'#fff', fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:6 }}>VIDEO</span>}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -285,19 +385,45 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
           </div>
         )}
 
+        {tab === 'groups' && !isOtherUser && (
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <span style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>My Groups</span>
+            {groupsLoading && (
+              <div style={{ textAlign:'center', padding:'24px 0' }}><div style={{ width:30, height:30, borderRadius:'50%', border:'3px solid #e8f4f4', borderTopColor:'#008080', animation:'spin .8s linear infinite', margin:'0 auto' }} /></div>
+            )}
+            {!groupsLoading && myGroups.length === 0 && (
+              <div style={{ textAlign:'center', padding:'30px 16px', background:'#fff', borderRadius:18, border:'1px solid #e8f4f4' }}>
+                <p style={{ fontSize:13, color:'#9aaab8' }}>You haven't joined or created any groups yet.</p>
+              </div>
+            )}
+            {myGroups.map(g => (
+              <button key={g._id} onClick={() => onOpenGroup?.(g)} style={{ display:'block', width:'100%', background:'#fff', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4', textAlign:'left', cursor:'pointer', padding:0 }}>
+                <div style={{ position:'relative', height:110, background:`url(${g.coverImage}) center/cover`, backgroundColor:'#0a2a2a' }}>
+                  <div style={{ position:'absolute', inset:0, background:'linear-gradient(0deg,rgba(0,0,0,.55) 0%,transparent 55%)' }} />
+                  <div style={{ position:'absolute', bottom:10, left:12 }}>
+                    <p style={{ fontSize:14, fontWeight:800, color:'#fff' }}>{g.name}</p>
+                    <p style={{ fontSize:11, color:'rgba(255,255,255,.8)' }}>{g.sportType} · {g.members?.length || 0} members</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
         {tab === 'badges' && (
           <div>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-              <span style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>Earned Badges</span>
-              <span style={{ fontSize:12, color:'#9aaab8' }}>{BADGES.length} / 12</span>
+              <span style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>Badges</span>
+              <span style={{ fontSize:12, color:'#9aaab8' }}>{badges.filter(b=>b.unlocked).length} / {badges.length}</span>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              {BADGES.map(b => (
-                <div key={b.label} style={{ background:'#fff', borderRadius:18, padding:'20px 16px', textAlign:'center', boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4' }}>
-                  <div style={{ width:56, height:56, borderRadius:18, background:b.color, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 10px' }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={b.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              {badges.map(b => (
+                <div key={b.label} style={{ background:'#fff', borderRadius:18, padding:'20px 16px', textAlign:'center', boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4', opacity: b.unlocked ? 1 : .45 }}>
+                  <div style={{ width:56, height:56, borderRadius:18, background: b.unlocked ? 'linear-gradient(135deg,#008080,#00E676)' : '#eef2f2', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 10px' }}>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={b.unlocked ? '#fff' : '#b0c0c0'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                   </div>
                   <p style={{ fontSize:12, fontWeight:700, color:'#1a1a2e' }}>{b.label}</p>
+                  <p style={{ fontSize:10, color:'#9aaab8', marginTop:3 }}>{b.desc}</p>
                 </div>
               ))}
             </div>
@@ -322,6 +448,10 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
             </div>
           </div>
         </div>
+      )}
+
+      {showSettings && !isOtherUser && (
+        <Settings user={user} onClose={() => setShowSettings(false)} onLogout={onLogout} showToast={showToast} />
       )}
     </div>
   )
