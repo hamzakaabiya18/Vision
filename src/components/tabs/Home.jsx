@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { VisionMark } from '../Brand'
 import { ajax } from '../../lib/ajaxClient'
 
@@ -240,7 +240,7 @@ export default function Home({ user, onNav, showToast, isMobile = true, onOpenAc
   const currentUserId = user?._id || user?.id || 'me'
 
   const loadFeed = useCallback(() => {
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     if (!token) { setLoadingFeed(false); return }
     setLoadingFeed(true)
     fetch(`${API}/activities/feed?limit=20`, { headers: { Authorization: `Bearer ${token}` } })

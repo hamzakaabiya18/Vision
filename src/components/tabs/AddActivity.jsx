@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { VisionLockup } from '../Brand'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -207,7 +207,7 @@ export default function AddActivity({ user, showToast, onDone }) {
       imageUrl: imageUrl.trim() || undefined,
     }
     try {
-      const token = localStorage.getItem('vision_token')
+      const token = sessionStorage.getItem('vision_token')
       const res = await fetch(`${API}/activities`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(body) })
       if (!res.ok) throw new Error('Save failed')
       showToast?.('Activity saved!', 'success')

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { ajax } from '../../lib/ajaxClient'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -52,7 +52,7 @@ function CreateGroupModal({ onClose, onCreate }) {
     try {
       const res = await fetch(`${API}/groups`, {
         method:'POST',
-        headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${localStorage.getItem('vision_token')}` },
+        headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${sessionStorage.getItem('vision_token')}` },
         body: JSON.stringify(form),
       })
       const data = await res.json()
@@ -175,7 +175,7 @@ export default function Groups({ user, showToast }) {
         if (q)               qs.set('q', q)
         if (sport !== 'All') qs.set('sport', sport)
         if (privacy)         qs.set('privacy', privacy)
-        const res = await fetch(`${API}/groups?${qs}`, { headers:{ Authorization:`Bearer ${localStorage.getItem('vision_token')}` } })
+        const res = await fetch(`${API}/groups?${qs}`, { headers:{ Authorization:`Bearer ${sessionStorage.getItem('vision_token')}` } })
         const data = await res.json()
         setGroups(data.groups || [])
       } catch { setGroups([]) }
@@ -189,7 +189,7 @@ export default function Groups({ user, showToast }) {
     try {
       const url = isMember ? `${API}/groups/${groupId}/leave` : `${API}/groups/${groupId}/join`
       const method = isMember ? 'DELETE' : 'POST'
-      const res = await fetch(url, { method, headers:{ Authorization:`Bearer ${localStorage.getItem('vision_token')}` } })
+      const res = await fetch(url, { method, headers:{ Authorization:`Bearer ${sessionStorage.getItem('vision_token')}` } })
       const data = await res.json()
       const updateMembers = g => {
         const members = data.joined

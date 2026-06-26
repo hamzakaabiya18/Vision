@@ -1,7 +1,7 @@
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+﻿const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 function getToken() {
-  return localStorage.getItem('vision_token') || ''
+  return sessionStorage.getItem('vision_token') || ''
 }
 
 function ajaxRequest(method, endpoint, data) {

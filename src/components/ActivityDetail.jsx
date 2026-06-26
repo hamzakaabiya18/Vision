@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -88,7 +88,7 @@ export default function ActivityDetail({ activity, currentUserId, user, onClose,
 
   useEffect(() => {
     if (!isRealId(activity._id)) return
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     fetch(`${API}/activities/${activity._id}`, { headers:{ Authorization:`Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setItem(d) })

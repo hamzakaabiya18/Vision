@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -43,7 +43,7 @@ export default function RouteDetail({ route: routeProp, currentUserId, onClose, 
   const [route, setRoute] = useState(routeProp)
 
   useEffect(() => {
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     fetch(`${API}/routes/${routeProp._id}`, { headers:{ Authorization:`Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setRoute(d) })
