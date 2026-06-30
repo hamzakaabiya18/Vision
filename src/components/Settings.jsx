@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -53,7 +53,7 @@ export default function Settings({ user, onClose, onLogout, showToast }) {
   const [deleteConfirm,setDeleteConfirm]= useState('')
   const [saving,        setSaving]      = useState(false)
 
-  function token() { return localStorage.getItem('vision_token') }
+  function token() { return sessionStorage.getItem('vision_token') }
 
   async function patchSettings(patch) {
     const next = { ...settings, ...patch }

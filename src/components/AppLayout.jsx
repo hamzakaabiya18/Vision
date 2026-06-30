@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { VisionLockup } from './Brand'
 import ActivityDetail from './ActivityDetail'
@@ -190,7 +190,7 @@ export default function AppLayout() {
   const handleOpenGroup    = useCallback((item) => setActiveGroup(item), [])
 
   const handleJoinGroup = useCallback(async (groupId, isMember) => {
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     try {
       const url = isMember ? `${API}/groups/${groupId}/leave` : `${API}/groups/${groupId}/join`
       const res = await fetch(url, { method: isMember ? 'DELETE' : 'POST', headers:{ Authorization:`Bearer ${token}` } })
@@ -207,7 +207,7 @@ export default function AppLayout() {
   }, [user, showToast])
 
   const handleRemoveMember = useCallback(async (groupId, memberId) => {
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     try {
       const res = await fetch(`${API}/groups/${groupId}/members/${memberId}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } })
       const data = await res.json()
@@ -220,7 +220,7 @@ export default function AppLayout() {
   const closeProfileView   = useCallback(() => setViewProfileId(null), [])
 
   const handleSaveRoute = useCallback(async (route) => {
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     try {
       const res = await fetch(`${API}/routes/${route._id}/save`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } })
       const data = await res.json()
@@ -236,14 +236,14 @@ export default function AppLayout() {
 
   const handleLike = useCallback(async (item) => {
     if (!isRealId(item._id)) return
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     try { await fetch(`${API}/activities/${item._id}/like`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } }) }
     catch {}
   }, [])
 
   const handlePostComment = useCallback(async (item, body) => {
     if (!isRealId(item._id)) { showToast('Comment posted (demo activity)'); return }
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     try {
       await fetch(`${API}/activities/${item._id}/comment`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ body }) })
       showToast('Comment posted', 'success')

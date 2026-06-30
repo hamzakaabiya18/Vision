@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import Settings from '../Settings'
 
@@ -47,7 +47,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
 
   useEffect(() => {
     if (isOtherUser) return
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     const myId  = currentUser?._id || currentUser?.id
     if (!myId) return
     setMyActsLoading(true)
@@ -60,7 +60,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
 
   useEffect(() => {
     if (isOtherUser) return
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     setSavedLoading(true)
     fetch(`${API}/routes/saved`, { headers:{ Authorization:`Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
@@ -71,7 +71,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
 
   useEffect(() => {
     if (isOtherUser) return
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     const myId  = currentUser?._id || currentUser?.id
     setGroupsLoading(true)
     fetch(`${API}/groups`, { headers:{ Authorization:`Bearer ${token}` } })
@@ -89,7 +89,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
   async function unsaveRoute(routeId) {
     setSavedRoutes(rs => rs.filter(r => r._id !== routeId))
     try {
-      const token = localStorage.getItem('vision_token')
+      const token = sessionStorage.getItem('vision_token')
       await fetch(`${API}/routes/${routeId}/save`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } })
       showToast?.('Route removed from saved', 'success')
     } catch { showToast?.('Could not remove route', 'error') }
@@ -97,7 +97,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
 
   useEffect(() => {
     if (!isOtherUser) return
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     setOtherLoading(true)
     Promise.all([
       fetch(`${API}/users/${viewUserId}`, { headers:{ Authorization:`Bearer ${token}` } }).then(r => r.ok ? r.json() : null),
@@ -112,7 +112,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
   }, [isOtherUser, viewUserId, currentUser])
 
   async function toggleFollow() {
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     const wasFollowing = isFollowingThem
     setFollowing(f => !f)
     try {
@@ -163,7 +163,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
   async function handleSaveProfile() {
     if (!editForm) return
     try {
-      const token = localStorage.getItem('vision_token')
+      const token = sessionStorage.getItem('vision_token')
       const res = await fetch(`${API}/users/me`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(editForm) })
       if (res.ok) { const { user: updated } = await res.json(); updateUser(updated) }
       else updateUser(editForm)

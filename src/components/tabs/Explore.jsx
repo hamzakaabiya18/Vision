@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+﻿import { useState, useEffect, useCallback, useMemo } from 'react'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -127,7 +127,7 @@ export default function Explore({ user, showToast, isMobile = true, onOpenActivi
   }, [])
 
   const loadRoutes = useCallback(() => {
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     setLoading(true)
     const qs = new URLSearchParams()
     if (activeCity)              qs.set('city', activeCity)
@@ -143,7 +143,7 @@ export default function Explore({ user, showToast, isMobile = true, onOpenActivi
   useEffect(() => { loadRoutes() }, [loadRoutes])
 
   useEffect(() => {
-    const token = localStorage.getItem('vision_token')
+    const token = sessionStorage.getItem('vision_token')
     fetch(`${API}/activities/search?limit=6`, { headers:{ Authorization:`Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.activities) setActivities(d.activities.sort((a,b)=>(b.likes?.length||0)-(a.likes?.length||0)).slice(0,4)) })
@@ -159,7 +159,7 @@ export default function Explore({ user, showToast, isMobile = true, onOpenActivi
     setSavingId(route._id)
     setRoutes(rs => rs.map(r => r._id===route._id ? { ...r, savedByMe: !r.savedByMe, savesCount:(r.savesCount||0)+(r.savedByMe?-1:1) } : r))
     try {
-      const token = localStorage.getItem('vision_token')
+      const token = sessionStorage.getItem('vision_token')
       const res = await fetch(`${API}/routes/${route._id}/save`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } })
       const data = await res.json()
       showToast?.(data.saved ? 'Route saved' : 'Route removed from saved', 'success')

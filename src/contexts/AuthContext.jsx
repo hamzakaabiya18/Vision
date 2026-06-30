@@ -4,6 +4,13 @@ const API       = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 const TOKEN_KEY = 'vision_token'
 const USER_KEY  = 'vision_user'
 
+// sessionStorage isolates each browser tab so multiple accounts can be open simultaneously
+const store = {
+  get:    (key) => sessionStorage.getItem(key),
+  set:    (key, val) => sessionStorage.setItem(key, val),
+  remove: (key) => sessionStorage.removeItem(key),
+}
+
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -12,8 +19,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     async function hydrate() {
-      const token  = localStorage.getItem(TOKEN_KEY)
-      const cached = localStorage.getItem(USER_KEY)
+      const token  = store.get(TOKEN_KEY)
+      const cached = store.get(USER_KEY)
       if (!token) { setLoading(false); return }
 
       if (cached) {
@@ -27,7 +34,7 @@ export function AuthProvider({ children }) {
         if (res.ok) {
           const { user } = await res.json()
           setCurrentUser(user)
-          localStorage.setItem(USER_KEY, JSON.stringify(user))
+          store.set(USER_KEY, JSON.stringify(user))
         } else {
           clear()
         }
@@ -41,8 +48,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   function clear() {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
+    store.remove(TOKEN_KEY)
+    store.remove(USER_KEY)
     setCurrentUser(null)
   }
 
@@ -59,8 +66,8 @@ export function AuthProvider({ children }) {
     }
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || 'Invalid email/username or password')
-    localStorage.setItem(TOKEN_KEY, data.token)
-    localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+    store.set(TOKEN_KEY, data.token)
+    store.set(USER_KEY, JSON.stringify(data.user))
     setCurrentUser(data.user)
     return data.user
   }, [])
@@ -78,8 +85,8 @@ export function AuthProvider({ children }) {
     }
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || 'Signup failed')
-    localStorage.setItem(TOKEN_KEY, data.token)
-    localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+    store.set(TOKEN_KEY, data.token)
+    store.set(USER_KEY, JSON.stringify(data.user))
     setCurrentUser(data.user)
     return data.user
   }, [])
@@ -95,7 +102,7 @@ export function AuthProvider({ children }) {
   const updateUser = useCallback((patch) => {
     setCurrentUser(prev => {
       const next = { ...prev, ...patch }
-      localStorage.setItem(USER_KEY, JSON.stringify(next))
+      store.set(USER_KEY, JSON.stringify(next))
       return next
     })
   }, [])
@@ -114,5 +121,5 @@ export function useAuth() {
 }
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY) || null
+  return sessionStorage.getItem(TOKEN_KEY) || null
 }
