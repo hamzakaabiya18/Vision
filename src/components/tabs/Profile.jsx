@@ -147,8 +147,17 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
   }
 
   function openEdit() {
-    setEditForm({ fullName: user?.fullName || '', username: user?.username || '', bio: user?.bio || '' })
+    setEditForm({ fullName: user?.fullName || '', username: user?.username || '', bio: user?.bio || '', avatarUrl: user?.avatarUrl || '' })
     setEditing(true)
+  }
+
+  function handleAvatarFile(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { showToast?.('Image must be under 2MB', 'error'); return }
+    const reader = new FileReader()
+    reader.onload = () => setEditForm(f => ({ ...f, avatarUrl: reader.result }))
+    reader.readAsDataURL(file)
   }
 
   async function handleSaveProfile() {
@@ -439,6 +448,24 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
           <div style={{ background:'#fff', width:'100%', maxWidth:480, margin:'0 auto', borderRadius:'24px 24px 0 0', padding:'24px 20px 40px', animation:'slideUp .3s ease' }} onClick={e => e.stopPropagation()}>
             <div style={{ width:40, height:4, borderRadius:2, background:'#e0eeee', margin:'0 auto 20px' }} />
             <h3 style={{ fontSize:18, fontWeight:800, color:'#1a1a2e', marginBottom:20 }}>Edit Profile</h3>
+
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:20 }}>
+              <div style={{ position:'relative', width:84, height:84, marginBottom:8 }}>
+                {editForm.avatarUrl ? (
+                  <img src={editForm.avatarUrl} alt="" style={{ width:84, height:84, borderRadius:'50%', objectFit:'cover' }} />
+                ) : (
+                  <div style={{ width:84, height:84, borderRadius:'50%', background:'#008080', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, fontWeight:800 }}>
+                    {(editForm.fullName || 'A').trim().slice(0,2).toUpperCase()}
+                  </div>
+                )}
+                <label style={{ position:'absolute', bottom:-2, right:-2, width:28, height:28, borderRadius:'50%', background:'#00E676', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', border:'2px solid #fff' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#003d3d" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  <input type="file" accept="image/*" onChange={handleAvatarFile} style={{ display:'none' }} />
+                </label>
+              </div>
+              <p style={{ fontSize:11, color:'#9aaab8' }}>Tap the + to change your photo</p>
+            </div>
+
             {[{ key:'fullName', label:'Full Name', ph:'Your full name' },{ key:'username', label:'Username', ph:'@username' },{ key:'bio', label:'Bio', ph:'Tell your story…' }].map(({ key, label, ph }) => (
               <div key={key} style={{ marginBottom:14 }}>
                 <p style={{ fontSize:12, color:'#9aaab8', fontWeight:600, marginBottom:6 }}>{label}</p>

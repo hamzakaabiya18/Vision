@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { getSportImage } from '../lib/sportImages'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -62,19 +63,21 @@ function RouteHero({ item }) {
     )
   }
 
-  if (item.imageUrl) {
-    return (
-      <div style={{ position:'relative', height:320, overflow:'hidden' }}>
-        <img src={item.imageUrl} alt={item.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,rgba(0,30,30,.15) 0%,rgba(0,20,20,.65) 100%)' }} />
-        <div style={{ position:'absolute', top:16, left:16, background:cfg.color, color:'#fff', fontSize:11, fontWeight:700, padding:'4px 12px', borderRadius:20, letterSpacing:.4 }}>{cfg.label.toUpperCase()}</div>
-      </div>
-    )
-  }
-
   return (
-    <div style={{ position:'relative', height:260, background:`linear-gradient(150deg,${cfg.color},#0a2a2a)`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <svg width="180" height="100" viewBox="0 0 180 100"><polyline points="10,80 50,40 80,60 120,20 170,30" stroke="#00E676" strokeWidth="3" fill="none" strokeLinecap="round" strokeDasharray="6 4" /></svg>
+    <div style={{ position:'relative', height:320, overflow:'hidden', background:`linear-gradient(150deg,${cfg.color},#0a2a2a)` }}>
+      <img
+        src={item.imageUrl || getSportImage(item.sportType, item._id)}
+        alt={item.title}
+        loading="lazy"
+        style={{ width:'100%', height:'100%', objectFit:'cover' }}
+        onError={e => {
+          if (e.target.dataset.fallbackApplied) { e.target.style.display = 'none'; return }
+          e.target.dataset.fallbackApplied = 'true'
+          e.target.src = getSportImage(item.sportType, item._id)
+        }}
+      />
+      <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,rgba(0,30,30,.15) 0%,rgba(0,20,20,.65) 100%)' }} />
+      <div style={{ position:'absolute', top:16, left:16, background:cfg.color, color:'#fff', fontSize:11, fontWeight:700, padding:'4px 12px', borderRadius:20, letterSpacing:.4 }}>{cfg.label.toUpperCase()}</div>
     </div>
   )
 }

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { ENTRY_MODE_KEY } from '../lib/entryMode'
 
 const SPORTS = ['Running','Cycling','Hiking','Swimming','Triathlon','CrossFit','Yoga','Rock Climbing']
 
-export default function SignUp({ onBack }) {
+export default function SignUp({ onBack, entryMode }) {
   const { signup } = useAuth()
 
   const [step,    setStep]    = useState(1)
@@ -35,6 +36,7 @@ export default function SignUp({ onBack }) {
 
     setLoading(true)
     try {
+      if (entryMode) localStorage.setItem(ENTRY_MODE_KEY, entryMode)
       await signup({
         fullName: form.fullName.trim(),
         username: form.username.trim().toLowerCase(),
@@ -43,6 +45,7 @@ export default function SignUp({ onBack }) {
         sports:   form.sports,
       })
     } catch (ex) {
+      localStorage.removeItem(ENTRY_MODE_KEY)
       setErr(ex.message || 'Signup failed. Please try again.')
       setLoading(false)
     }
@@ -121,7 +124,7 @@ export default function SignUp({ onBack }) {
         {step === 1 && (
           <p style={{ textAlign:'center', fontSize:13, color:'#9aaab8', marginTop:20 }}>
             Already have an account?{' '}
-            <button type="button" onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer', fontSize:13, color:'#008080', fontWeight:700, fontFamily:'inherit', padding:0 }}>Sign In</button>
+            <button type="button" onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer', fontSize:13, color:'#008080', fontWeight:700, fontFamily:'inherit', padding:0 }}>Log In</button>
           </p>
         )}
     </div>

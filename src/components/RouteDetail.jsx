@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { getSportImage } from '../lib/sportImages'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -14,8 +15,19 @@ function RouteMap({ route, large = false }) {
   const h = large ? 320 : 160
   if (!Array.isArray(pts) || pts.length < 2) {
     return (
-      <div style={{ height:h, background:'linear-gradient(150deg,#005f5f,#0a2a2a)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <p style={{ color:'rgba(255,255,255,.6)', fontSize:13 }}>No route preview available</p>
+      <div style={{ position:'relative', height:h, overflow:'hidden', background:'linear-gradient(150deg,#005f5f,#0a2a2a)' }}>
+        <img
+          src={route.imageUrl || getSportImage(route.sportType, route._id)}
+          alt={route.title}
+          loading="lazy"
+          style={{ width:'100%', height:'100%', objectFit:'cover' }}
+          onError={e => {
+            if (e.target.dataset.fallbackApplied) { e.target.style.display = 'none'; return }
+            e.target.dataset.fallbackApplied = 'true'
+            e.target.src = getSportImage(route.sportType, route._id)
+          }}
+        />
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,rgba(0,30,30,.1) 0%,rgba(0,20,20,.55) 100%)' }} />
       </div>
     )
   }

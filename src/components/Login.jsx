@@ -2,27 +2,46 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { VisionLockup } from './Brand'
 import SignUp from './SignUp'
+import { ENTRY_MODE_KEY, ENTRY_MODES } from '../lib/entryMode'
 
-export default function Login() {
+export default function Login({ onGuestEnter }) {
   const { login } = useAuth()
 
-  const [mode,     setMode]     = useState('signup')
-  const [ident,    setIdent]    = useState('')
-  const [password, setPassword] = useState('')
-  const [showPass, setShowPass] = useState(false)
-  const [loading,  setLoading]  = useState(false)
-  const [err,      setErr]      = useState('')
+  const [mode,      setMode]      = useState('login')
+  const [entryMode, setEntryMode] = useState('athlete')
+  const [ident,     setIdent]     = useState('')
+  const [password,  setPassword]  = useState('')
+  const [showPass,  setShowPass]  = useState(false)
+  const [loading,   setLoading]   = useState(false)
+  const [err,       setErr]       = useState('')
 
   async function submit(e) {
     e.preventDefault()
     if (!ident.trim() || !password) { setErr('Please fill in all fields'); return }
     setLoading(true); setErr('')
     try {
+      localStorage.setItem(ENTRY_MODE_KEY, entryMode)
       await login({ emailOrUsername: ident.trim(), password })
     } catch (ex) {
+      localStorage.removeItem(ENTRY_MODE_KEY)
       setErr(ex.message || 'Invalid credentials')
       setLoading(false)
     }
+  }
+
+  function EntryModeSelector() {
+    return (
+      <div style={{ marginBottom: 18 }}>
+        <p style={{ fontSize:12, fontWeight:700, color:'#5a6a7a', marginBottom:8, letterSpacing:'.04em' }}>CHOOSE YOUR ACCESS TYPE</p>
+        <div style={{ position:'relative' }}>
+          <select value={entryMode} onChange={e => setEntryMode(e.target.value)} style={s.select}>
+            {ENTRY_MODES.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+          </select>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5a6a7a" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }}><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <p style={{ fontSize:11, color:'#8a9baa', marginTop:6, lineHeight:1.4 }}>{ENTRY_MODES.find(m => m.id === entryMode)?.desc}</p>
+      </div>
+    )
   }
 
   return (
@@ -47,18 +66,26 @@ export default function Login() {
       </div>
 
       <div style={s.card}>
-        <div style={{ marginBottom: 32 }}>
+        <div style={{ marginBottom: 28 }}>
           <VisionLockup size={40} dark />
         </div>
 
-        {mode === 'signup' ? (
-          <SignUp onBack={() => setMode('login')} />
+        <EntryModeSelector />
+
+        {entryMode === 'guest' ? (
+          <div>
+            <h1 style={s.h1}>Browse as Guest</h1>
+            <p style={s.sub}>No account needed. Pick your sports and explore.</p>
+            <button onClick={() => onGuestEnter?.()} style={{ ...s.submitBtn, marginTop: 24 }}>Continue as Guest</button>
+          </div>
+        ) : mode === 'signup' ? (
+          <SignUp entryMode={entryMode} onBack={() => setMode('login')} />
         ) : (
           <>
             <h1 style={s.h1}>Welcome Back</h1>
             <p style={s.sub}>Push further. Connect deeper.</p>
 
-            <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:14, marginTop: 28 }}>
+            <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:14, marginTop: 20 }}>
               <div style={s.inputWrap}>
                 <svg style={s.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aaab8" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <input value={ident} onChange={e=>setIdent(e.target.value)} placeholder="Email or Username" type="text" style={s.input} autoComplete="username" />
@@ -82,13 +109,16 @@ export default function Login() {
               {err && <p style={s.errMsg}>{err}</p>}
 
               <button type="submit" disabled={loading} style={{ ...s.submitBtn, opacity: loading ? 0.8 : 1 }}>
-                {loading ? <span style={s.spinner} /> : 'Sign In'}
+                {loading ? <span style={s.spinner} /> : 'Log In'}
               </button>
             </form>
 
-            <p style={{ textAlign:'center', fontSize:13, color:'#9aaab8', marginTop:24 }}>
+            <p style={{ textAlign:'center', fontSize:13, color:'#9aaab8', marginTop:18 }}>
               Don't have an account?{' '}
               <button type="button" onClick={()=>setMode('signup')} style={{ ...s.link, color:'#008080', fontWeight:700 }}>Sign Up</button>
+            </p>
+            <p style={{ textAlign:'center', fontSize:13, color:'#9aaab8', marginTop:6 }}>
+              <button type="button" onClick={() => onGuestEnter?.()} style={{ ...s.link, color:'#5a6a7a', fontWeight:600 }}>Continue as Guest</button>
             </p>
           </>
         )}
@@ -139,6 +169,7 @@ const s = {
   card:         { background:'#fff', padding:'48px 40px', display:'flex', flexDirection:'column', justifyContent:'center', overflowY:'auto' },
   h1:           { fontSize:28, fontWeight:800, color:'#0a2a2a', margin:0 },
   sub:          { fontSize:14, color:'#008080', fontWeight:500, marginTop:4 },
+  select:       { width:'100%', height:48, background:'#f7fbfb', border:'1.5px solid #e0eeee', borderRadius:14, padding:'0 38px 0 14px', fontSize:14, color:'#1a1a2e', fontFamily:'inherit', appearance:'none', WebkitAppearance:'none', cursor:'pointer' },
   inputWrap:    { display:'flex', alignItems:'center', background:'#f7fbfb', border:'1.5px solid #e0eeee', borderRadius:14, padding:'0 14px', height:52, gap:10 },
   inputIcon:    { flexShrink:0 },
   input:        { flex:1, background:'transparent', fontSize:14, color:'#0a2a2a', fontFamily:'inherit', height:'100%', border:'none', outline:'none' },

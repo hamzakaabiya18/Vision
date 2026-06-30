@@ -68,7 +68,7 @@ function ProfilePreview({ user, onFollowToggle, onViewProfile }) {
       <img src={user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName)}&background=008080&color=fff&size=120`} alt={user.fullName} style={{ width:84, height:84, borderRadius:'50%', objectFit:'cover', marginBottom:12 }} />
       <p style={{ fontSize:16, fontWeight:800, color:'#1a1a2e' }}>{user.fullName}</p>
       <p style={{ fontSize:12, color:'#9aaab8', marginBottom:10 }}>@{user.username}</p>
-      {user.isBot && <span style={{ fontSize:10, fontWeight:700, color:'#008080', background:'rgba(0,128,128,.1)', padding:'3px 10px', borderRadius:20, marginBottom:10 }}>VISION COACH BOT</span>}
+      {user.isBot && <span style={{ fontSize:10, fontWeight:700, color:'#008080', background:'rgba(0,128,128,.1)', padding:'3px 10px', borderRadius:20, marginBottom:10 }}>VISION OFFICIAL BOT</span>}
       {!user.isBot && !user.isDemo && (
         <>
           <div style={{ display:'flex', gap:20, marginBottom:14 }}>
@@ -120,7 +120,7 @@ function ChatThread({ otherUser, messages, onBack, onSend, isMobile, loading }) 
         <div style={{ flex:1 }}>
           <p style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>{otherUser.fullName}{otherUser.isBot ? ' 🤖' : ''}</p>
           <p style={{ fontSize:12, color:'#9aaab8', fontWeight:500 }}>
-            {otherUser.isBot ? 'VISION Coach Bot' : otherUser.isDemo ? 'Demo conversation' : `@${otherUser.username}`}
+            {otherUser.isBot ? 'VISION Official Bot' : otherUser.isDemo ? 'Demo conversation' : `@${otherUser.username}`}
           </p>
         </div>
       </div>
@@ -129,7 +129,7 @@ function ChatThread({ otherUser, messages, onBack, onSend, isMobile, loading }) 
         {loading && <p style={{ textAlign:'center', fontSize:12, color:'#9aaab8' }}>Loading messages…</p>}
         {!loading && messages.length === 0 && (
           <p style={{ textAlign:'center', fontSize:13, color:'#9aaab8', marginTop:20 }}>
-            {otherUser.isBot ? 'Ask VISION Coach about running, cycling, recovery, routes, or stats.' : 'Say hello and start the conversation.'}
+            {otherUser.isBot ? `Say hello to ${otherUser.fullName} and ask away.` : 'Say hello and start the conversation.'}
           </p>
         )}
         {messages.map(m => {
@@ -162,7 +162,7 @@ function ChatThread({ otherUser, messages, onBack, onSend, isMobile, loading }) 
 export default function Messages({ user, showToast, isMobile = true, onOpenProfile }) {
   const [conversations, setConversations] = useState([])
   const [convosLoading,  setConvosLoading] = useState(true)
-  const [botId,          setBotId]         = useState(null)
+  const [bots,           setBots]          = useState([])
   const [active,         setActive]        = useState(null)
   const [messages,       setMessages]      = useState([])
   const [msgsLoading,    setMsgsLoading]   = useState(false)
@@ -180,9 +180,9 @@ export default function Messages({ user, showToast, isMobile = true, onOpenProfi
   }, [])
 
   useEffect(() => {
-    fetch(`${API}/messages/bot/id`, { headers:{ Authorization:`Bearer ${token()}` } })
+    fetch(`${API}/messages/bots`, { headers:{ Authorization:`Bearer ${token()}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.botId) setBotId(d) })
+      .then(d => { if (Array.isArray(d?.bots)) setBots(d.bots) })
       .catch(() => {})
     loadConversations()
     const iv = setInterval(loadConversations, 8000)
@@ -249,9 +249,12 @@ export default function Messages({ user, showToast, isMobile = true, onOpenProfi
   }
 
   const realList = conversations.map(c => ({ ...c.otherUser, lastBody: c.body, lastAt: c.createdAt, unread: c.unreadCount || 0 }))
-  const hasBotConvo = realList.some(c => c._id === botId?.botId)
-  const pinnedBot = botId && !hasBotConvo ? [{ _id: botId.botId, fullName: 'VISION Coach', username:'vision_coach', isBot:true, lastBody:'Tap to ask for athletic guidance', lastAt:null, unread:0 }] : []
-  const fullList = [...pinnedBot, ...realList]
+  const realIds = new Set(realList.map(c => c._id))
+  const pinnedBots = bots.filter(b => !realIds.has(b.botId)).map(b => ({
+    _id: b.botId, fullName: b.fullName, username: b.username, isBot: true,
+    lastBody: b.bio, lastAt: null, unread: 0,
+  }))
+  const fullList = [...pinnedBots, ...realList]
   const filtered = query ? fullList.filter(c => c.fullName?.toLowerCase().includes(query.toLowerCase())) : fullList
   const showDemo = !convosLoading && realList.length === 0 && !query
 

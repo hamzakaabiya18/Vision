@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { VisionMark } from '../Brand'
 import { ajax } from '../../lib/ajaxClient'
+import { getSportImage } from '../../lib/sportImages'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -16,11 +17,11 @@ const SPORT_CONFIG = {
 }
 
 const SEED_FEED = [
-  { _id:'s1', isSeed:true, user:{ username:'marcus_runs', fullName:'Marcus Chen', avatarUrl:'https://images.unsplash.com/photo-1499996860823-5214fcc65f8f?w=80&q=80', verified:true }, sportType:'Run', title:'Morning Summit Chase', distanceKm:14.2, durationMinutes:68, avgPace:'4:50', elevationGainM:312, location:'Carmel Valley, CA', imageUrl:'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80', notes:'Felt strong on the final climb — legs are coming around nicely this block.', likes:['a','b','c','d'], comments:[], createdAt: new Date(Date.now()-7200000).toISOString() },
-  { _id:'s2', isSeed:true, user:{ username:'sara_cycles', fullName:'Sara Valeri', avatarUrl:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80', verified:true }, sportType:'Ride', title:'Pacific Coast Highway Blast', distanceKm:48.6, durationMinutes:112, avgSpeed:26.4, elevationGainM:180, location:'Malibu, CA', imageUrl:'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=600&q=80', notes:'Tailwind the whole way back. Lungs are still recovering.', likes:['a','b','c','d','e','f'], comments:[], createdAt: new Date(Date.now()-18000000).toISOString() },
-  { _id:'s3', isSeed:true, user:{ username:'leo_trails', fullName:'Leo Brooks', avatarUrl:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&q=80', verified:false }, sportType:'Hike', title:'Timberline Ascent', distanceKm:8.7, durationMinutes:202, elevationGainM:890, location:'Mount Hood, OR', imageUrl:'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&q=80', notes:'Snow line was higher than expected — brought the wrong boots.', likes:['a','b','c','d','e','f','g','h'], comments:[], createdAt: new Date(Date.now()-86400000).toISOString() },
-  { _id:'s4', isSeed:true, user:{ username:'nadia_tri', fullName:'Nadia Kowalski', avatarUrl:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80', verified:true }, sportType:'Swim', title:'Open Water 3K — Lake Geneva', distanceKm:3, durationMinutes:54, avgPace:'18:00', elevationGainM:0, location:'Lake Geneva, CH', imageUrl:'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=600&q=80', notes:'Water was choppy past the first buoy but sighting held up.', likes:['a','b','c'], comments:[], createdAt: new Date(Date.now()-172800000).toISOString() },
-  { _id:'s5', isSeed:true, user:{ username:'james_lifts', fullName:'James Okafor', avatarUrl:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80', verified:false }, sportType:'Gym', title:'Heavy Lower Body Day', distanceKm:0, durationMinutes:75, elevationGainM:0, location:'Iron Yard Gym', imageUrl:'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80', notes:'New squat PR. Hips felt locked in all session.', likes:['a','b'], comments:[], createdAt: new Date(Date.now()-262800000).toISOString() },
+  { _id:'s1', isSeed:true, user:{ username:'marcus_runs', fullName:'Marcus Chen', avatarUrl:'https://images.unsplash.com/photo-1499996860823-5214fcc65f8f?w=80&q=80', verified:true }, sportType:'Run', title:'Morning Summit Chase', distanceKm:14.2, durationMinutes:68, avgPace:'4:50', elevationGainM:312, location:'Carmel Valley, CA', imageUrl:getSportImage('Run','s1'), notes:'Felt strong on the final climb — legs are coming around nicely this block.', likes:['a','b','c','d'], comments:[], createdAt: new Date(Date.now()-7200000).toISOString() },
+  { _id:'s2', isSeed:true, user:{ username:'sara_cycles', fullName:'Sara Valeri', avatarUrl:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80', verified:true }, sportType:'Ride', title:'Pacific Coast Highway Blast', distanceKm:48.6, durationMinutes:112, avgSpeed:26.4, elevationGainM:180, location:'Malibu, CA', imageUrl:getSportImage('Ride','s2'), notes:'Tailwind the whole way back. Lungs are still recovering.', likes:['a','b','c','d','e','f'], comments:[], createdAt: new Date(Date.now()-18000000).toISOString() },
+  { _id:'s3', isSeed:true, user:{ username:'leo_trails', fullName:'Leo Brooks', avatarUrl:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&q=80', verified:false }, sportType:'Hike', title:'Timberline Ascent', distanceKm:8.7, durationMinutes:202, elevationGainM:890, location:'Mount Hood, OR', imageUrl:getSportImage('Hike','s3'), notes:'Snow line was higher than expected — brought the wrong boots.', likes:['a','b','c','d','e','f','g','h'], comments:[], createdAt: new Date(Date.now()-86400000).toISOString() },
+  { _id:'s4', isSeed:true, user:{ username:'nadia_tri', fullName:'Nadia Kowalski', avatarUrl:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80', verified:true }, sportType:'Swim', title:'Open Water 3K — Lake Geneva', distanceKm:3, durationMinutes:54, avgPace:'18:00', elevationGainM:0, location:'Lake Geneva, CH', imageUrl:getSportImage('Swim','s4'), notes:'Water was choppy past the first buoy but sighting held up.', likes:['a','b','c'], comments:[], createdAt: new Date(Date.now()-172800000).toISOString() },
+  { _id:'s5', isSeed:true, user:{ username:'james_lifts', fullName:'James Okafor', avatarUrl:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80', verified:false }, sportType:'Gym', title:'Heavy Lower Body Day', distanceKm:0, durationMinutes:75, elevationGainM:0, location:'Iron Yard Gym', imageUrl:getSportImage('Gym','s5'), notes:'New squat PR. Hips felt locked in all session.', likes:['a','b'], comments:[], createdAt: new Date(Date.now()-262800000).toISOString() },
 ]
 
 function isRealId(id) {
@@ -76,9 +77,19 @@ function FeedCard({ item, currentUserId, onLike, onComment, onShare, onOpen, onO
           <p style={{ fontSize:16, fontWeight:700, color:'#1a1a2e', lineHeight:1.3 }}>{item.title}</p>
         </div>
 
-        {item.imageUrl && (
+        {(item.imageUrl || item.sportType) && (
           <div style={{ position:'relative', height:200, background:'#e0eee8', overflow:'hidden' }}>
-            <img src={item.imageUrl} alt={item.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{ e.target.style.display='none' }} />
+            <img
+              src={item.imageUrl || getSportImage(item.sportType, item._id)}
+              alt={item.title}
+              loading="lazy"
+              style={{ width:'100%', height:'100%', objectFit:'cover' }}
+              onError={e => {
+                if (e.target.dataset.fallbackApplied) { e.target.style.display = 'none'; return }
+                e.target.dataset.fallbackApplied = 'true'
+                e.target.src = getSportImage(item.sportType, item._id)
+              }}
+            />
             <svg style={{ position:'absolute', bottom:10, right:10, filter:'drop-shadow(0 2px 6px rgba(0,0,0,.45))' }} width="72" height="52" viewBox="0 0 72 52">
               <path d="M8 44 Q18 18 32 28 Q46 38 60 8" stroke="#00E676" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeDasharray="5 2.5"/>
               <circle cx="8" cy="44" r="4" fill="#00E676"/><circle cx="60" cy="8" r="4" fill="#008080"/>

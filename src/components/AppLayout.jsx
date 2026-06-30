@@ -10,6 +10,8 @@ import Messages    from './tabs/Messages'
 import Profile     from './tabs/Profile'
 import Stats       from './tabs/Stats'
 import Groups, { GroupDetail } from './tabs/Groups'
+import AdminDashboard from './tabs/AdminDashboard'
+import { ENTRY_MODE_KEY } from '../lib/entryMode'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 function isRealId(id) { return typeof id === 'string' && /^[0-9a-f]{24}$/i.test(id) }
@@ -24,6 +26,7 @@ function NavIcon({ name, active }) {
     profile: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
     stats: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
     groups: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    admin: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z" fill={active ? 'rgba(0,128,128,0.12)' : 'none'}/></svg>,
   }
   return icons[name] || null
 }
@@ -56,6 +59,8 @@ function DesktopSidebar({ tab, onNav, unread, user, onLogout }) {
   const avatar = user?.avatarUrl ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'A')}&background=008080&color=fff&size=80`
 
+  const navItems = user?.role === 'admin' ? [...DESKTOP_NAV, { id:'admin', label:'Admin' }] : DESKTOP_NAV
+
   return (
     <aside style={{ width:240, flexShrink:0, height:'100vh', position:'sticky', top:0, background:'#fff', borderRight:'1px solid #e8f4f4', display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <div style={{ padding:'28px 20px 20px' }}>
@@ -63,7 +68,7 @@ function DesktopSidebar({ tab, onNav, unread, user, onLogout }) {
       </div>
 
       <nav style={{ flex:1, padding:'0 10px', display:'flex', flexDirection:'column', gap:2 }}>
-        {DESKTOP_NAV.map(({ id, label }) => {
+        {navItems.map(({ id, label }) => {
           const active = tab === id
           return (
             <button key={id} onClick={() => onNav(id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 14px', borderRadius:12, background: active ? 'rgba(0,128,128,0.1)' : 'transparent', border:'none', cursor:'pointer', width:'100%', textAlign:'left', transition:'background .15s' }}>
@@ -148,6 +153,28 @@ export default function AppLayout() {
     setTimeout(() => setToast(null), 3000)
   }, [])
 
+  /* One-shot post-login routing based on the Entry Mode chosen on the
+     login screen. This is purely a UI convenience — the REAL permission
+     check (real role from the DB-backed `user` object) happens here too,
+     so selecting "Admin" as an entry mode without the real admin role
+     never grants admin access, only a clear message and a normal
+     redirect. */
+  useEffect(() => {
+    if (!user) return
+    const entryMode = localStorage.getItem(ENTRY_MODE_KEY)
+    if (!entryMode) return
+    localStorage.removeItem(ENTRY_MODE_KEY)
+
+    if (entryMode === 'admin') {
+      if (user.role === 'admin') setTab('admin')
+      else { setTab('home'); showToast('Access denied — Admin role required for your account.', 'error') }
+    } else if (entryMode === 'groupOwner') {
+      setTab('groups')
+    } else if (entryMode === 'coachbot') {
+      setTab('messages')
+    }
+  }, [user, showToast])
+
   const go = useCallback((id) => {
     setTab(id)
     if (id === 'messages') setUnread(0)
@@ -178,6 +205,17 @@ export default function AppLayout() {
       showToast(data.joined ? 'Joined group' : 'Left group', 'success')
     } catch { showToast('Could not update group membership', 'error') }
   }, [user, showToast])
+
+  const handleRemoveMember = useCallback(async (groupId, memberId) => {
+    const token = localStorage.getItem('vision_token')
+    try {
+      const res = await fetch(`${API}/groups/${groupId}/members/${memberId}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } })
+      const data = await res.json()
+      if (!res.ok) { showToast(data.message || 'Could not remove member', 'error'); return }
+      setActiveGroup(prev => prev && prev._id === groupId ? { ...prev, members: (prev.members||[]).filter(m => (m._id||m) !== memberId) } : prev)
+      showToast('Member removed', 'success')
+    } catch { showToast('Could not remove member', 'error') }
+  }, [showToast])
   const handleOpenProfile  = useCallback((userId) => setViewProfileId(userId), [])
   const closeProfileView   = useCallback(() => setViewProfileId(null), [])
 
@@ -220,6 +258,22 @@ export default function AppLayout() {
       case 'home':     return <Home        user={user} onNav={go} showToast={showToast} isMobile={isMobile} onOpenActivity={handleOpenActivity} onOpenProfile={handleOpenProfile} />
       case 'explore':  return <Explore     user={user} showToast={showToast} isMobile={isMobile} onOpenActivity={handleOpenActivity} onOpenRoute={handleOpenRoute} />
       case 'groups':   return <Groups      user={user} showToast={showToast} />
+      case 'admin':
+        /* Defense in depth: even if `tab` state were ever forced to 'admin'
+           without the real role, render an access-denied message here —
+           there is no real URL route to this view, so this state-level
+           check is the closest equivalent to a guarded route. The backend
+           middleware is the actual source of truth and rejects all
+           /api/admin requests from non-admins regardless of this check. */
+        if (user?.role !== 'admin') {
+          return (
+            <div style={{ padding:'80px 24px', textAlign:'center' }}>
+              <p style={{ fontSize:16, fontWeight:700, color:'#1a1a2e' }}>Access denied</p>
+              <p style={{ fontSize:13, color:'#9aaab8', marginTop:6 }}>This dashboard is only available to admins.</p>
+            </div>
+          )
+        }
+        return <AdminDashboard showToast={showToast} />
       case 'add':      return <AddActivity onDone={()=>setTab('home')} user={user} showToast={showToast} />
       case 'messages': return <Messages    user={user} showToast={showToast} isMobile={isMobile} onOpenProfile={handleOpenProfile} />
       case 'stats':    return <Stats       user={user} onBack={()=>setTab('profile')} isMobile={isMobile} onOpenProfile={handleOpenProfile} />
@@ -228,7 +282,7 @@ export default function AppLayout() {
     }
   }
 
-  const wideTab = tab === 'home' || tab === 'messages' || tab === 'explore'
+  const wideTab = tab === 'home' || tab === 'messages' || tab === 'explore' || tab === 'admin'
 
   if (!isMobile) {
     return (
@@ -266,8 +320,10 @@ export default function AppLayout() {
           <GroupDetail
             group={activeGroup}
             currentUserId={user?._id || user?.id}
+            currentUserRole={user?.role}
             onClose={() => setActiveGroup(null)}
             onJoin={handleJoinGroup}
+            onRemoveMember={handleRemoveMember}
             showToast={showToast}
           />
         )}

@@ -1,19 +1,12 @@
+/* Simple, deliberate mark: a peak (the "V" of VISION, and a mountain/summit
+   motif for athletic progress) sitting on a single flat baseline — no
+   gradients-for-gradients'-sake, just two solid brand colors. */
 export function VisionMark({ size = 32 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="VISION">
-      <rect width="40" height="40" rx="9" fill="url(#vm_bg)"/>
-      <path d="M8 22.5L15 28.5L20.5 19.5L30 9.5" stroke="url(#vm_stroke)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <path d="M30 9.5H23.5M30 9.5V16" stroke="#00E676" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <defs>
-        <linearGradient id="vm_bg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#004d4d"/>
-          <stop offset="1" stopColor="#007a7a"/>
-        </linearGradient>
-        <linearGradient id="vm_stroke" x1="8" y1="28.5" x2="30" y2="9.5" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#ffffff"/>
-          <stop offset="1" stopColor="#00E676"/>
-        </linearGradient>
-      </defs>
+      <rect width="40" height="40" rx="9" fill="#0a3636"/>
+      <path d="M9 27L18 13L23 21L27 15L32 27" stroke="#00E676" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      <circle cx="18" cy="13" r="2.2" fill="#00E676"/>
     </svg>
   )
 }

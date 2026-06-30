@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import AppLayout from './components/AppLayout'
 import Login from './components/Login'
+import GuestExplore from './components/GuestExplore'
 
 function AuthLoading() {
   return (
@@ -16,9 +18,12 @@ function AuthLoading() {
 
 function Root() {
   const { currentUser, loading } = useAuth()
+  const [guestMode, setGuestMode] = useState(false)
+
   if (loading) return <AuthLoading />
-  if (!currentUser) return <Login />
-  return <AppLayout />
+  if (currentUser) return <AppLayout />
+  if (guestMode) return <GuestExplore onExit={() => setGuestMode(false)} />
+  return <Login onGuestEnter={() => setGuestMode(true)} />
 }
 
 export default function App() {

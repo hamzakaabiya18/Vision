@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ajax } from '../../lib/ajaxClient'
+import { getSportImage } from '../../lib/sportImages'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -12,7 +13,7 @@ function GroupCard({ group, currentUserId, onJoin, onOpen }) {
   return (
     <div style={{ background:'#fff', borderRadius:20, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4' }}>
       <button onClick={() => onOpen(group)} style={{ display:'block', width:'100%', background:'none', border:'none', padding:0, cursor:'pointer', textAlign:'left' }}>
-        <div style={{ position:'relative', height:130, background:`url(${group.coverImage}) center/cover`, backgroundColor:'#0a2a2a' }}>
+        <div style={{ position:'relative', height:130, background:`url(${group.coverImage || getSportImage(group.sportType, group._id)}) center/cover`, backgroundColor:'#0a2a2a' }}>
           <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 55%)' }} />
           <div style={{ position:'absolute', bottom:12, left:14, right:14 }}>
             <span style={{ display:'inline-block', background:color, color:'#fff', fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:6, letterSpacing:.5, marginBottom:4 }}>{group.sportType?.toUpperCase()}</span>
@@ -103,16 +104,20 @@ function CreateGroupModal({ onClose, onCreate }) {
   )
 }
 
-export function GroupDetail({ group, currentUserId, onClose, onJoin, showToast }) {
+export function GroupDetail({ group, currentUserId, currentUserRole, onClose, onJoin, onRemoveMember, showToast }) {
   const isMember = group.members?.some(m => (m._id || m) === currentUserId)
   const color = SPORT_COLORS[group.sportType] || '#008080'
+  /* Real ownership check — uses the actual Group.admin field and the
+     real platform role, never the login screen's entry mode selection. */
+  const isOwner = (group.admin?._id || group.admin) === currentUserId
+  const canManage = isOwner || currentUserRole === 'admin'
   return (
     <div style={{ position:'fixed', inset:0, background:'#F0FAFA', zIndex:1000, overflowY:'auto' }}>
       <button onClick={onClose} style={{ position:'fixed', top:16, left:16, zIndex:10, width:38, height:38, borderRadius:'50%', background:'rgba(0,0,0,.35)', border:'none', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
 
-      <div style={{ position:'relative', height:240, background:`url(${group.coverImage}) center/cover`, backgroundColor:'#0a2a2a' }}>
+      <div style={{ position:'relative', height:240, background:`url(${group.coverImage || getSportImage(group.sportType, group._id)}) center/cover`, backgroundColor:'#0a2a2a' }}>
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(0deg,rgba(0,20,20,.7) 0%,rgba(0,20,20,.15) 60%)' }} />
         <div style={{ position:'absolute', bottom:18, left:20, right:20 }}>
           <span style={{ display:'inline-block', background:color, color:'#fff', fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:8, marginBottom:8 }}>{group.sportType?.toUpperCase()}</span>
@@ -143,6 +148,26 @@ export function GroupDetail({ group, currentUserId, onClose, onJoin, showToast }
             {group.members.slice(0,8).map((m,i) => (
               <img key={m._id || i} src={m.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.fullName||'A')}&background=008080&color=fff`} alt="" style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover', border:'2px solid #fff', marginLeft: i===0?0:-10 }} />
             ))}
+          </div>
+        )}
+
+        {canManage && (
+          <div style={{ background:'#fff', borderRadius:18, border:'1px solid #e8f4f4', padding:'16px 18px', marginBottom:18 }}>
+            <p style={{ fontSize:13, fontWeight:700, color:'#1a1a2e', marginBottom:10 }}>Manage Members</p>
+            {(group.members||[]).length === 0 && <p style={{ fontSize:12, color:'#9aaab8' }}>No members yet.</p>}
+            {(group.members||[]).map(m => {
+              const mid = m._id || m
+              const isGroupOwner = mid === (group.admin?._id || group.admin)
+              return (
+                <div key={mid} style={{ display:'flex', alignItems:'center', gap:10, padding:'7px 0', borderBottom:'1px solid #f0f4f4' }}>
+                  <img src={m.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.fullName||'A')}&background=008080&color=fff`} alt="" style={{ width:30, height:30, borderRadius:'50%', objectFit:'cover' }} />
+                  <span style={{ flex:1, fontSize:13, color:'#1a1a2e' }}>{m.fullName || 'Member'}{isGroupOwner ? ' (Owner)' : ''}</span>
+                  {!isGroupOwner && (
+                    <button onClick={() => onRemoveMember?.(group._id, mid)} style={{ fontSize:11, fontWeight:700, color:'#e53935', background:'none', border:'1.5px solid #ffcdd2', borderRadius:8, padding:'4px 10px', cursor:'pointer' }}>Remove</button>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
 
@@ -203,6 +228,18 @@ export default function Groups({ user, showToast }) {
     } catch { showToast?.('Could not update group membership', 'error') }
   }
 
+  async function handleRemoveMember(groupId, memberId) {
+    try {
+      const res = await fetch(`${API}/groups/${groupId}/members/${memberId}`, { method:'DELETE', headers:{ Authorization:`Bearer ${localStorage.getItem('vision_token')}` } })
+      const data = await res.json()
+      if (!res.ok) { showToast?.(data.message || 'Could not remove member', 'error'); return }
+      const strip = g => ({ ...g, members: (g.members||[]).filter(m => (m._id||m) !== memberId) })
+      setGroups(prev => prev.map(g => g._id === groupId ? strip(g) : g))
+      setSelected(prev => prev && prev._id === groupId ? strip(prev) : prev)
+      showToast?.('Member removed', 'success')
+    } catch { showToast?.('Could not remove member', 'error') }
+  }
+
   return (
     <div style={{ background:'#F0FAFA', minHeight:'100%' }}>
       <div style={{ padding:'52px 16px 16px' }}>
@@ -241,7 +278,7 @@ export default function Groups({ user, showToast }) {
       </div>
 
       {showCreate && <CreateGroupModal onClose={() => setShowCreate(false)} onCreate={g => { setGroups(prev => [g, ...prev]); showToast?.('Group created', 'success') }} />}
-      {selected && <GroupDetail group={selected} currentUserId={user?._id} onClose={() => setSelected(null)} onJoin={handleJoin} showToast={showToast} />}
+      {selected && <GroupDetail group={selected} currentUserId={user?._id} currentUserRole={user?.role} onClose={() => setSelected(null)} onJoin={handleJoin} onRemoveMember={handleRemoveMember} showToast={showToast} />}
     </div>
   )
 }
