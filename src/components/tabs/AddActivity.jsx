@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { VisionLockup } from '../Brand'
+import { compressImageFile } from '../../lib/imageUtils'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -206,16 +207,22 @@ export default function AddActivity({ user, showToast, onDone }) {
       notes: note,
       imageUrl: imageUrl.trim() || undefined,
     }
+    let saved = false
     try {
       const token = sessionStorage.getItem('vision_token')
       const res = await fetch(`${API}/activities`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(body) })
-      if (!res.ok) throw new Error('Save failed')
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        if (res.status === 413) throw new Error('Photo is too large even after compression — try a different photo')
+        throw new Error(data?.message || `Save failed (${res.status})`)
+      }
       showToast?.('Activity saved!', 'success')
-    } catch {
-      showToast?.('Could not save — check your connection', 'error')
+      saved = true
+    } catch (err) {
+      showToast?.(err.message || 'Could not save — check your connection', 'error')
     }
     setSaving(false)
-    onDone?.()
+    if (saved) onDone?.()
   }
 
   function reset() { stopTimer(); setPhase('select'); setSport(null); setElapsed(0); setDistM(0); setCoords([]); setImageUrl(''); setNote('') }
@@ -360,12 +367,17 @@ export default function AddActivity({ user, showToast, onDone }) {
           <label style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, padding:'24px 0', border:'1.5px dashed #c9e6e0', borderRadius:12, cursor:'pointer' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#008080" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
             <span style={{ fontSize:12, color:'#008080', fontWeight:600 }}>Add a photo</span>
-            <input type="file" accept="image/*" style={{ display:'none' }} onChange={e => {
+            <input type="file" accept="image/*" style={{ display:'none' }} onChange={async e => {
               const file = e.target.files?.[0]
               if (!file) return
-              const reader = new FileReader()
-              reader.onload = ev => setImageUrl(ev.target.result)
-              reader.readAsDataURL(file)
+              if (!file.type.startsWith('image/')) { showToast?.('Please choose an image file', 'error'); return }
+              if (file.size > 15 * 1024 * 1024) { showToast?.('Image is too large (max 15MB)', 'error'); return }
+              try {
+                const compressed = await compressImageFile(file)
+                setImageUrl(compressed)
+              } catch {
+                showToast?.('Could not process that image — try a different one', 'error')
+              }
             }} />
           </label>
         )}

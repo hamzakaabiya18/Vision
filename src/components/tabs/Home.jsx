@@ -2,6 +2,7 @@
 import { VisionMark } from '../Brand'
 import { ajax } from '../../lib/ajaxClient'
 import { getSportImage } from '../../lib/sportImages'
+import { getActivityImage } from '../../lib/activityImages'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -49,12 +50,39 @@ function fmtDuration(mins) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
-function FeedCard({ item, currentUserId, onLike, onComment, onShare, onOpen, onOpenProfile }) {
+function DeleteConfirmModal({ onConfirm, onCancel, deleting }) {
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }} onClick={e => e.target===e.currentTarget && onCancel()}>
+      <div style={{ background:'#fff', borderRadius:20, padding:'24px 22px', maxWidth:340, width:'100%', textAlign:'center' }}>
+        <p style={{ fontSize:16, fontWeight:800, color:'#1a1a2e', marginBottom:8 }}>Delete this activity?</p>
+        <p style={{ fontSize:13, color:'#9aaab8', marginBottom:20, lineHeight:1.5 }}>This can't be undone. It will be removed from your feed and profile.</p>
+        <div style={{ display:'flex', gap:10 }}>
+          <button onClick={onCancel} style={{ flex:1, height:44, borderRadius:12, background:'#f7fbfb', border:'1.5px solid #e0eeee', color:'#5a6a7a', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+          <button onClick={onConfirm} disabled={deleting} style={{ flex:1, height:44, borderRadius:12, background:'#e53935', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity: deleting ? .7 : 1 }}>{deleting ? 'Deleting…' : 'Delete'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FeedCard({ item, currentUserId, onLike, onComment, onShare, onOpen, onOpenProfile, onDelete }) {
   const cfg   = SPORT_CONFIG[item.sportType] || SPORT_CONFIG.Run
   const liked = item.likes?.includes(currentUserId)
   const userId = item.user?._id || item.user?.id
+  const isMine = userId === currentUserId
+  const [menuOpen,    setMenuOpen]    = useState(false)
+  const [confirming,  setConfirming]  = useState(false)
+  const [deleting,    setDeleting]    = useState(false)
+
+  async function handleDelete() {
+    setDeleting(true)
+    await onDelete?.(item)
+    setDeleting(false)
+    setConfirming(false)
+  }
+
   return (
-    <article style={{ background:'#fff', borderRadius:20, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,128,128,0.08)', border:'1px solid #e8f4f4' }}>
+    <article style={{ background:'#fff', borderRadius:20, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,128,128,0.08)', border:'1px solid #e8f4f4', position:'relative' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 0' }}>
         <button onClick={() => onOpenProfile(item)} style={{ display:'flex', alignItems:'center', gap:10, background:'none', border:'none', cursor:'pointer', padding:0, textAlign:'left' }}>
           <img src={item.user.avatarUrl} alt={item.user.fullName} style={{ width:40, height:40, borderRadius:'50%', objectFit:'cover', border:'2px solid #e8f4f4' }} onError={e=>{ e.target.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80' }} />
@@ -70,7 +98,26 @@ function FeedCard({ item, currentUserId, onLike, onComment, onShare, onOpen, onO
             </div>
           </div>
         </button>
+        {isMine && onDelete && (
+          <div style={{ position:'relative' }}>
+            <button onClick={() => setMenuOpen(o => !o)} style={{ width:30, height:30, borderRadius:'50%', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }} aria-label="Activity options">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#9aaab8"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            {menuOpen && (
+              <>
+                <div style={{ position:'fixed', inset:0, zIndex:1 }} onClick={() => setMenuOpen(false)} />
+                <div style={{ position:'absolute', top:34, right:0, background:'#fff', borderRadius:12, boxShadow:'0 4px 20px rgba(0,0,0,.15)', border:'1px solid #e8f4f4', overflow:'hidden', zIndex:2, minWidth:140 }}>
+                  <button onClick={() => { setMenuOpen(false); setConfirming(true) }} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'10px 14px', background:'none', border:'none', cursor:'pointer', textAlign:'left', fontSize:13, fontWeight:600, color:'#e53935', fontFamily:'inherit' }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Delete
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
+      {confirming && <DeleteConfirmModal onConfirm={handleDelete} onCancel={() => setConfirming(false)} deleting={deleting} />}
 
       <button onClick={() => onOpen(item)} style={{ display:'block', width:'100%', background:'none', border:'none', padding:0, cursor:'pointer', textAlign:'left' }}>
         <div style={{ padding:'8px 16px 10px' }}>
@@ -80,7 +127,7 @@ function FeedCard({ item, currentUserId, onLike, onComment, onShare, onOpen, onO
         {(item.imageUrl || item.sportType) && (
           <div style={{ position:'relative', height:200, background:'#e0eee8', overflow:'hidden' }}>
             <img
-              src={item.imageUrl || getSportImage(item.sportType, item._id)}
+              src={getActivityImage(item)}
               alt={item.title}
               loading="lazy"
               style={{ width:'100%', height:'100%', objectFit:'cover' }}
@@ -282,6 +329,17 @@ export default function Home({ user, onNav, showToast, isMobile = true, onOpenAc
     }
   }, [currentUserId])
 
+  const handleDelete = useCallback(async (item) => {
+    if (!isRealId(item._id)) { showToast('Demo activity — nothing to delete', 'error'); return }
+    try {
+      await ajax.deleteActivity(item._id)
+      setFeed(f => f.filter(p => p._id !== item._id))
+      showToast('Activity deleted', 'success')
+    } catch {
+      showToast('Could not delete — please try again', 'error')
+    }
+  }, [showToast])
+
   const handlePostComment = useCallback(async (item, body) => {
     if (!isRealId(item._id)) {
       const fake = { _id:`local_${Date.now()}`, body, user:{ fullName: user?.fullName, avatarUrl: user?.avatarUrl } }
@@ -362,7 +420,7 @@ export default function Home({ user, onNav, showToast, isMobile = true, onOpenAc
       )}
       <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
         {feed.map(post => (
-          <FeedCard key={post._id} item={post} currentUserId={currentUserId} onLike={handleLike} onComment={setCommentItem} onShare={handleShare} onOpen={onOpenActivity} onOpenProfile={handleOpenProfile} />
+          <FeedCard key={post._id} item={post} currentUserId={currentUserId} onLike={handleLike} onComment={setCommentItem} onShare={handleShare} onOpen={onOpenActivity} onOpenProfile={handleOpenProfile} onDelete={handleDelete} />
         ))}
       </div>
       {isMobile && <div style={{ marginTop:20 }}><AboutVisionCard /></div>}

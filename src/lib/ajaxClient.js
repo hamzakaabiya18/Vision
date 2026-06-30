@@ -35,4 +35,5 @@ export const ajax = {
   getGlobalStats:   ()       => ajaxRequest('GET', '/stats/global'),
   postComment:      (id, body) => ajaxRequest('POST', `/activities/${id}/comment`, body),
   likeActivity:     (id)    => ajaxRequest('POST', `/activities/${id}/like`),
+  deleteActivity:   (id)    => ajaxRequest('DELETE', `/activities/${id}`),
 }

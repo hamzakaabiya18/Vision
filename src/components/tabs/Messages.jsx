@@ -92,7 +92,13 @@ function ProfilePreview({ user, onFollowToggle, onViewProfile }) {
   )
 }
 
-function ChatThread({ otherUser, messages, onBack, onSend, isMobile, loading }) {
+function BotIcon({ size = 14, color = '#008080' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill={color} stroke="none"/><circle cx="9" cy="14" r="1.2" fill={color} stroke="none"/><circle cx="15" cy="14" r="1.2" fill={color} stroke="none"/></svg>
+  )
+}
+
+function ChatThread({ otherUser, messages, onBack, onSend, isMobile, loading, onOpenProfile }) {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef = useRef(null)
@@ -108,6 +114,8 @@ function ChatThread({ otherUser, messages, onBack, onSend, isMobile, loading }) 
     setSending(false)
   }
 
+  const canOpenProfile = !otherUser.isBot && !otherUser.isDemo && otherUser._id
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#F0FAFA' }}>
       <div style={{ background: '#fff', padding: isMobile ? '50px 16px 12px' : '20px 20px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 2px 8px rgba(0,128,128,.06)', flexShrink: 0 }}>
@@ -116,13 +124,15 @@ function ChatThread({ otherUser, messages, onBack, onSend, isMobile, loading }) 
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
           </button>
         )}
-        <img src={otherUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.fullName)}&background=008080&color=fff`} alt={otherUser.fullName} style={{ width:40, height:40, borderRadius:'50%', objectFit:'cover' }} />
-        <div style={{ flex:1 }}>
-          <p style={{ fontSize:15, fontWeight:700, color:'#1a1a2e' }}>{otherUser.fullName}{otherUser.isBot ? ' 🤖' : ''}</p>
-          <p style={{ fontSize:12, color:'#9aaab8', fontWeight:500 }}>
-            {otherUser.isBot ? 'VISION Official Bot' : otherUser.isDemo ? 'Demo conversation' : `@${otherUser.username}`}
-          </p>
-        </div>
+        <button onClick={() => canOpenProfile && onOpenProfile?.(otherUser._id)} disabled={!canOpenProfile} style={{ display:'flex', alignItems:'center', gap:12, background:'none', border:'none', padding:0, cursor: canOpenProfile ? 'pointer' : 'default', textAlign:'left', flex:1 }}>
+          <img src={otherUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.fullName)}&background=008080&color=fff`} alt={otherUser.fullName} style={{ width:40, height:40, borderRadius:'50%', objectFit:'cover' }} />
+          <div style={{ flex:1 }}>
+            <p style={{ fontSize:15, fontWeight:700, color:'#1a1a2e', display:'flex', alignItems:'center', gap:5 }}>{otherUser.fullName}{otherUser.isBot && <BotIcon />}</p>
+            <p style={{ fontSize:12, color:'#9aaab8', fontWeight:500 }}>
+              {otherUser.isBot ? 'VISION Official Bot' : otherUser.isDemo ? 'Demo conversation' : `@${otherUser.username}`}
+            </p>
+          </div>
+        </button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -259,7 +269,7 @@ export default function Messages({ user, showToast, isMobile = true, onOpenProfi
   const showDemo = !convosLoading && realList.length === 0 && !query
 
   if (isMobile && active) {
-    return <ChatThread otherUser={active} messages={active.isDemo ? (demoMsgs[active._id] || []) : messages} onBack={() => setActive(null)} onSend={handleSend} isMobile loading={msgsLoading} />
+    return <ChatThread otherUser={active} messages={active.isDemo ? (demoMsgs[active._id] || []) : messages} onBack={() => setActive(null)} onSend={handleSend} isMobile loading={msgsLoading} onOpenProfile={onOpenProfile} />
   }
 
   const listPanel = (
@@ -293,7 +303,11 @@ export default function Messages({ user, showToast, isMobile = true, onOpenProfi
           <button key={c._id} onClick={() => openUser(c)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '13px 16px', background: !isMobile && active?._id === c._id ? '#f0fafa' : 'none', border: 'none', borderBottom: i < filtered.length - 1 ? '1px solid #e8f4f4' : 'none', cursor: 'pointer', textAlign: 'left' }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <img src={c.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.fullName)}&background=008080&color=fff`} alt={c.fullName} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover' }} />
-              {c.isBot && <span style={{ position: 'absolute', bottom: 1, right: 1, width: 16, height: 16, borderRadius: '50%', background: '#00E676', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>★</span>}
+              {c.isBot && (
+                <span style={{ position: 'absolute', bottom: 1, right: 1, width: 16, height: 16, borderRadius: '50%', background: '#00E676', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#003d3d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+              )}
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
@@ -340,7 +354,7 @@ export default function Messages({ user, showToast, isMobile = true, onOpenProfi
       </div>
       <div style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
         {active ? (
-          <ChatThread otherUser={active} messages={active.isDemo ? (demoMsgs[active._id] || []) : messages} onBack={() => setActive(null)} onSend={handleSend} isMobile={false} loading={msgsLoading} />
+          <ChatThread otherUser={active} messages={active.isDemo ? (demoMsgs[active._id] || []) : messages} onBack={() => setActive(null)} onSend={handleSend} isMobile={false} loading={msgsLoading} onOpenProfile={onOpenProfile} />
         ) : (
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c0d8d8" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>

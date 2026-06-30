@@ -1,6 +1,8 @@
 ﻿import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import Settings from '../Settings'
+import { compressImageFile } from '../../lib/imageUtils'
+import { ajax } from '../../lib/ajaxClient'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -128,6 +130,22 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
   const [editing,       setEditing]      = useState(false)
   const [logoutConfirm, setLogoutConfirm]= useState(false)
   const [editForm,      setEditForm]     = useState(null)
+  const [deleteTarget,  setDeleteTarget] = useState(null)
+  const [deleting,      setDeleting]     = useState(false)
+
+  async function confirmDeleteActivity() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await ajax.deleteActivity(deleteTarget._id)
+      setMyActs(prev => prev.filter(a => a._id !== deleteTarget._id))
+      showToast?.('Activity deleted', 'success')
+    } catch {
+      showToast?.('Could not delete — please try again', 'error')
+    }
+    setDeleting(false)
+    setDeleteTarget(null)
+  }
 
   if (isOtherUser && otherLoading) {
     return (
@@ -151,13 +169,17 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
     setEditing(true)
   }
 
-  function handleAvatarFile(e) {
+  async function handleAvatarFile(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) { showToast?.('Image must be under 2MB', 'error'); return }
-    const reader = new FileReader()
-    reader.onload = () => setEditForm(f => ({ ...f, avatarUrl: reader.result }))
-    reader.readAsDataURL(file)
+    if (!file.type.startsWith('image/')) { showToast?.('Please choose an image file', 'error'); return }
+    if (file.size > 15 * 1024 * 1024) { showToast?.('Image is too large (max 15MB)', 'error'); return }
+    try {
+      const compressed = await compressImageFile(file, 480, 0.8)
+      setEditForm(f => ({ ...f, avatarUrl: compressed }))
+    } catch {
+      showToast?.('Could not process that image — try a different one', 'error')
+    }
   }
 
   async function handleSaveProfile() {
@@ -165,11 +187,17 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
     try {
       const token = sessionStorage.getItem('vision_token')
       const res = await fetch(`${API}/users/me`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(editForm) })
-      if (res.ok) { const { user: updated } = await res.json(); updateUser(updated) }
-      else updateUser(editForm)
-    } catch { updateUser(editForm) }
-    setEditing(false)
-    showToast?.('Profile updated', 'success')
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(res.status === 413 ? 'Photo is too large — try a different one' : (data?.message || 'Could not save profile'))
+      }
+      const { user: updated } = await res.json()
+      updateUser(updated)
+      setEditing(false)
+      showToast?.('Profile updated', 'success')
+    } catch (err) {
+      showToast?.(err.message || 'Could not save — check your connection', 'error')
+    }
   }
 
   function handleLogout() {
@@ -309,7 +337,11 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
               </div>
             )}
             {myActs.map(a => (
-              <button key={a._id} onClick={() => onOpenActivity?.(a)} style={{ background:'#fff', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4', textAlign:'left', cursor:'pointer', padding:0, display:'block', width:'100%' }}>
+              <div key={a._id} style={{ position:'relative' }}>
+                <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(a) }} style={{ position:'absolute', top:10, right:10, zIndex:2, width:30, height:30, borderRadius:'50%', background:'rgba(0,0,0,.45)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }} aria-label="Delete activity">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+                <button onClick={() => onOpenActivity?.(a)} style={{ background:'#fff', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,128,128,.08)', border:'1px solid #e8f4f4', textAlign:'left', cursor:'pointer', padding:0, display:'block', width:'100%' }}>
                 {a.imageUrl && (
                   <div style={{ position:'relative', height:150 }}>
                     <img src={a.imageUrl} alt={a.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
@@ -335,7 +367,8 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
                     </div>
                   ))}
                 </div>
-              </button>
+                </button>
+              </div>
             ))}
           </div>
         )}
@@ -482,6 +515,19 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
 
       {showSettings && !isOtherUser && (
         <Settings user={user} onClose={() => setShowSettings(false)} onLogout={onLogout} showToast={showToast} />
+      )}
+
+      {deleteTarget && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }} onClick={e => e.target===e.currentTarget && setDeleteTarget(null)}>
+          <div style={{ background:'#fff', borderRadius:20, padding:'24px 22px', maxWidth:340, width:'100%', textAlign:'center' }}>
+            <p style={{ fontSize:16, fontWeight:800, color:'#1a1a2e', marginBottom:8 }}>Delete this activity?</p>
+            <p style={{ fontSize:13, color:'#9aaab8', marginBottom:20, lineHeight:1.5 }}>This can't be undone. It will be removed from your feed and profile.</p>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setDeleteTarget(null)} style={{ flex:1, height:44, borderRadius:12, background:'#f7fbfb', border:'1.5px solid #e0eeee', color:'#5a6a7a', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+              <button onClick={confirmDeleteActivity} disabled={deleting} style={{ flex:1, height:44, borderRadius:12, background:'#e53935', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity: deleting ? .7 : 1 }}>{deleting ? 'Deleting…' : 'Delete'}</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
