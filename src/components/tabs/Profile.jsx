@@ -31,7 +31,7 @@ function TypeBadge({ type }) {
   return <span style={{ background:bg, color, fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:6, letterSpacing:.3 }}>{label}</span>
 }
 
-export default function Profile({ user: propUser, onLogout, onStats, showToast, viewUserId, onBack, onOpenActivity, onOpenRoute, onOpenGroup }) {
+export default function Profile({ user: propUser, onLogout, onStats, showToast, viewUserId, onBack, onOpenActivity, onOpenRoute, onOpenGroup, initialTab, openSettings: openSettingsOnMount }) {
   const { currentUser, updateUser } = useAuth()
   const isOtherUser = Boolean(viewUserId) && viewUserId !== (currentUser?._id || currentUser?.id)
 
@@ -46,6 +46,10 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
   const [myActs,        setMyActs]       = useState([])
   const [myActsLoading, setMyActsLoading]= useState(false)
   const [showSettings,  setShowSettings] = useState(false)
+
+  useEffect(() => {
+    if (openSettingsOnMount) setShowSettings(true)
+  }, [openSettingsOnMount])
 
   useEffect(() => {
     if (isOtherUser) return
@@ -126,7 +130,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
 
   const user = isOtherUser ? otherUser : (currentUser || propUser)
 
-  const [tab,           setTab]          = useState('activities')
+  const [tab,           setTab]          = useState(initialTab || 'activities')
   const [editing,       setEditing]      = useState(false)
   const [logoutConfirm, setLogoutConfirm]= useState(false)
   const [editForm,      setEditForm]     = useState(null)

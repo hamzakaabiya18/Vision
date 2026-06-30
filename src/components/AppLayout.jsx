@@ -27,6 +27,9 @@ function NavIcon({ name, active }) {
     stats: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
     groups: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
     admin: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z" fill={active ? 'rgba(0,128,128,0.12)' : 'none'}/></svg>,
+    more: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1.6" fill={c} stroke="none"/><circle cx="12" cy="12" r="1.6" fill={c} stroke="none"/><circle cx="19" cy="12" r="1.6" fill={c} stroke="none"/></svg>,
+    settings: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+    routes: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>,
   }
   return icons[name] || null
 }
@@ -36,8 +39,36 @@ const MOBILE_NAV = [
   { id:'explore',  label:'Explore' },
   { id:'add',      label:''        },
   { id:'messages', label:'Chat'    },
-  { id:'profile',  label:'Profile' },
+  { id:'more',     label:'More'    },
 ]
+
+const MORE_ITEMS = [
+  { id:'profile',  label:'Profile',      icon:'profile'  },
+  { id:'stats',    label:'Statistics',   icon:'stats'    },
+  { id:'groups',   label:'Groups',       icon:'groups'   },
+  { id:'settings', label:'Settings',     icon:'settings' },
+  { id:'routes',   label:'Saved Routes', icon:'routes'   },
+]
+
+function MoreDrawer({ onClose, onSelect, isAdmin }) {
+  const items = isAdmin ? [...MORE_ITEMS, { id:'admin', label:'Admin Dashboard', icon:'admin' }] : MORE_ITEMS
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:700, display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', maxWidth:430, margin:'0 auto', background:'#fff', borderRadius:'24px 24px 0 0', padding:'10px 16px calc(20px + env(safe-area-inset-bottom, 0px))', animation:'slideUp .25s ease' }}>
+        <div style={{ width:40, height:4, borderRadius:2, background:'#e0eeee', margin:'0 auto 14px' }} />
+        <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+          {items.map(({ id, label, icon }) => (
+            <button key={id} onClick={() => onSelect(id)} style={{ display:'flex', alignItems:'center', gap:14, padding:'13px 10px', background:'none', border:'none', cursor:'pointer', textAlign:'left', width:'100%', borderRadius:12, fontFamily:'inherit' }}>
+              <NavIcon name={icon} active={false} />
+              <span style={{ fontSize:15, fontWeight:600, color:'#1a1a2e' }}>{label}</span>
+            </button>
+          ))}
+        </div>
+        <button onClick={onClose} style={{ width:'100%', height:46, marginTop:10, borderRadius:14, background:'#f7fbfb', border:'1.5px solid #e0eeee', color:'#5a6a7a', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Close</button>
+      </div>
+    </div>
+  )
+}
 
 const DESKTOP_NAV = [
   { id:'home',     label:'Home'     },
@@ -121,6 +152,8 @@ export default function AppLayout() {
   const [unread,      setUnread]      = useState(2)
   const [toast,       setToast]       = useState(null)
   const [isMobile,    setIsMobile]    = useState(false)
+  const [showMore,       setShowMore]       = useState(false)
+  const [profileDeepLink, setProfileDeepLink] = useState(null)
   const [activeActivity, setActiveActivity] = useState(null)
   const [activeRoute,    setActiveRoute]    = useState(null)
   const [activeGroup,    setActiveGroup]    = useState(null)
@@ -176,8 +209,17 @@ export default function AppLayout() {
   }, [user, showToast])
 
   const go = useCallback((id) => {
+    if (id === 'more') { setShowMore(true); return }
     setTab(id)
     if (id === 'messages') setUnread(0)
+  }, [])
+
+  const handleMoreSelect = useCallback((id) => {
+    setShowMore(false)
+    if (id === 'settings')      { setProfileDeepLink({ openSettings: true });  setTab('profile') }
+    else if (id === 'routes')   { setProfileDeepLink({ initialTab: 'routes' }); setTab('profile') }
+    else if (id === 'profile')  { setProfileDeepLink(null); setTab('profile') }
+    else                        { setTab(id) }
   }, [])
 
   const handleLogout = useCallback(() => {
@@ -277,7 +319,7 @@ export default function AppLayout() {
       case 'add':      return <AddActivity onDone={()=>setTab('home')} user={user} showToast={showToast} />
       case 'messages': return <Messages    user={user} showToast={showToast} isMobile={isMobile} onOpenProfile={handleOpenProfile} />
       case 'stats':    return <Stats       user={user} onBack={()=>setTab('profile')} isMobile={isMobile} onOpenProfile={handleOpenProfile} />
-      case 'profile':  return <Profile     user={user} onLogout={handleLogout} onStats={()=>setTab('stats')} showToast={showToast} onOpenActivity={handleOpenActivity} onOpenRoute={handleOpenRoute} onOpenGroup={handleOpenGroup} />
+      case 'profile':  return <Profile     user={user} onLogout={handleLogout} onStats={()=>setTab('stats')} showToast={showToast} onOpenActivity={handleOpenActivity} onOpenRoute={handleOpenRoute} onOpenGroup={handleOpenGroup} initialTab={profileDeepLink?.initialTab} openSettings={profileDeepLink?.openSettings} />
       default:         return <Home        user={user} onNav={go} showToast={showToast} isMobile={isMobile} onOpenActivity={handleOpenActivity} onOpenProfile={handleOpenProfile} />
     }
   }
@@ -349,7 +391,7 @@ export default function AppLayout() {
               </div>
             )
           }
-          const active = tab === id || (id === 'profile' && tab === 'stats')
+          const active = tab === id || (id === 'more' && ['profile','stats','groups','admin'].includes(tab))
           return (
             <button key={id} onClick={() => go(id)} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, background:'none', border:'none', padding:'6px 10px', borderRadius:12, cursor:'pointer', position:'relative', minWidth:48 }} aria-label={label}>
               <div style={{ position:'relative' }}>
@@ -362,6 +404,7 @@ export default function AppLayout() {
           )
         })}
       </nav>
+      {showMore && <MoreDrawer onClose={() => setShowMore(false)} onSelect={handleMoreSelect} isAdmin={user?.role === 'admin'} />}
       {activeActivity && (
         <ActivityDetail
           activity={activeActivity}
