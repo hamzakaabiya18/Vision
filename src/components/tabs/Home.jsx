@@ -3,6 +3,8 @@ import { VisionMark } from '../Brand'
 import { ajax } from '../../lib/ajaxClient'
 import { getSportImage } from '../../lib/sportImages'
 import { getActivityImage } from '../../lib/activityImages'
+import { DEMO_FEED_USERS } from '../../lib/demoUsers'
+import Avatar from '../Avatar'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -18,11 +20,11 @@ const SPORT_CONFIG = {
 }
 
 const SEED_FEED = [
-  { _id:'s1', isSeed:true, user:{ username:'marcus_runs', fullName:'Marcus Chen', avatarUrl:'https://images.unsplash.com/photo-1499996860823-5214fcc65f8f?w=80&q=80', verified:true }, sportType:'Run', title:'Morning Summit Chase', distanceKm:14.2, durationMinutes:68, avgPace:'4:50', elevationGainM:312, location:'Carmel Valley, CA', imageUrl:getSportImage('Run','s1'), notes:'Felt strong on the final climb — legs are coming around nicely this block.', likes:['a','b','c','d'], comments:[], createdAt: new Date(Date.now()-7200000).toISOString() },
-  { _id:'s2', isSeed:true, user:{ username:'sara_cycles', fullName:'Sara Valeri', avatarUrl:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80', verified:true }, sportType:'Ride', title:'Pacific Coast Highway Blast', distanceKm:48.6, durationMinutes:112, avgSpeed:26.4, elevationGainM:180, location:'Malibu, CA', imageUrl:getSportImage('Ride','s2'), notes:'Tailwind the whole way back. Lungs are still recovering.', likes:['a','b','c','d','e','f'], comments:[], createdAt: new Date(Date.now()-18000000).toISOString() },
-  { _id:'s3', isSeed:true, user:{ username:'leo_trails', fullName:'Leo Brooks', avatarUrl:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&q=80', verified:false }, sportType:'Hike', title:'Timberline Ascent', distanceKm:8.7, durationMinutes:202, elevationGainM:890, location:'Mount Hood, OR', imageUrl:getSportImage('Hike','s3'), notes:'Snow line was higher than expected — brought the wrong boots.', likes:['a','b','c','d','e','f','g','h'], comments:[], createdAt: new Date(Date.now()-86400000).toISOString() },
-  { _id:'s4', isSeed:true, user:{ username:'nadia_tri', fullName:'Nadia Kowalski', avatarUrl:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80', verified:true }, sportType:'Swim', title:'Open Water 3K — Lake Geneva', distanceKm:3, durationMinutes:54, avgPace:'18:00', elevationGainM:0, location:'Lake Geneva, CH', imageUrl:getSportImage('Swim','s4'), notes:'Water was choppy past the first buoy but sighting held up.', likes:['a','b','c'], comments:[], createdAt: new Date(Date.now()-172800000).toISOString() },
-  { _id:'s5', isSeed:true, user:{ username:'james_lifts', fullName:'James Okafor', avatarUrl:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80', verified:false }, sportType:'Gym', title:'Heavy Lower Body Day', distanceKm:0, durationMinutes:75, elevationGainM:0, location:'Iron Yard Gym', imageUrl:getSportImage('Gym','s5'), notes:'New squat PR. Hips felt locked in all session.', likes:['a','b'], comments:[], createdAt: new Date(Date.now()-262800000).toISOString() },
+  { _id:'s1', isSeed:true, user:DEMO_FEED_USERS.runner,     sportType:'Run',  title:'Morning Summit Chase',          distanceKm:14.2, durationMinutes:68,  avgPace:'4:50',  elevationGainM:312, location:'Carmel Valley, CA', imageUrl:getSportImage('Run','s1'),  notes:'Felt strong on the final climb — legs are coming around nicely this block.', likes:['a','b','c','d'],             comments:[], createdAt: new Date(Date.now()-7200000).toISOString() },
+  { _id:'s2', isSeed:true, user:DEMO_FEED_USERS.cyclist,    sportType:'Ride', title:'Pacific Coast Highway Blast',   distanceKm:48.6, durationMinutes:112, avgSpeed:26.4,   elevationGainM:180, location:'Malibu, CA',         imageUrl:getSportImage('Ride','s2'), notes:'Tailwind the whole way back. Lungs are still recovering.',                   likes:['a','b','c','d','e','f'],     comments:[], createdAt: new Date(Date.now()-18000000).toISOString() },
+  { _id:'s3', isSeed:true, user:DEMO_FEED_USERS.hiker,      sportType:'Hike', title:'Timberline Ascent',             distanceKm:8.7,  durationMinutes:202, elevationGainM:890,                      location:'Mount Hood, OR',    imageUrl:getSportImage('Hike','s3'), notes:'Snow line was higher than expected — brought the wrong boots.',             likes:['a','b','c','d','e','f','g','h'], comments:[], createdAt: new Date(Date.now()-86400000).toISOString() },
+  { _id:'s4', isSeed:true, user:DEMO_FEED_USERS.swimmer,    sportType:'Swim', title:'Open Water 3K — Lake Geneva',   distanceKm:3,    durationMinutes:54,  avgPace:'18:00', elevationGainM:0,   location:'Lake Geneva, CH',   imageUrl:getSportImage('Swim','s4'), notes:'Water was choppy past the first buoy but sighting held up.',                 likes:['a','b','c'],                 comments:[], createdAt: new Date(Date.now()-172800000).toISOString() },
+  { _id:'s5', isSeed:true, user:DEMO_FEED_USERS.gymAthlete, sportType:'Gym',  title:'Heavy Lower Body Day',          distanceKm:0,    durationMinutes:75,  elevationGainM:0,                        location:'Iron Yard Gym',     imageUrl:getSportImage('Gym','s5'),  notes:'New squat PR. Hips felt locked in all session.',                             likes:['a','b'],                     comments:[], createdAt: new Date(Date.now()-262800000).toISOString() },
 ]
 
 function isRealId(id) {
@@ -85,7 +87,7 @@ function FeedCard({ item, currentUserId, onLike, onComment, onShare, onOpen, onO
     <article style={{ background:'#fff', borderRadius:20, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,128,128,0.08)', border:'1px solid #e8f4f4', position:'relative' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 0' }}>
         <button onClick={() => onOpenProfile(item)} style={{ display:'flex', alignItems:'center', gap:10, background:'none', border:'none', cursor:'pointer', padding:0, textAlign:'left' }}>
-          <img src={item.user.avatarUrl} alt={item.user.fullName} style={{ width:40, height:40, borderRadius:'50%', objectFit:'cover', border:'2px solid #e8f4f4' }} onError={e=>{ e.target.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80' }} />
+          <Avatar user={item.user} size={40} border="2px solid #e8f4f4" />
           <div>
             <div style={{ display:'flex', alignItems:'center', gap:5 }}>
               <span style={{ fontSize:14, fontWeight:600, color:'#1a1a2e' }}>{item.user.fullName}</span>
@@ -193,14 +195,14 @@ function CommentSheet({ item, onClose, onPost, showToast }) {
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.4)', zIndex:500, display:'flex', alignItems:'flex-end', justifyContent:'center' }} onClick={e => e.target===e.currentTarget && onClose()}>
-      <div style={{ width:'100%', maxWidth:430, background:'#fff', borderRadius:'20px 20px 0 0', padding:'20px 16px 36px', maxHeight:'70vh', display:'flex', flexDirection:'column' }}>
+      <div style={{ width:'100%', maxWidth:430, background:'#fff', borderRadius:'20px 20px 0 0', padding:'20px 16px calc(20px + env(safe-area-inset-bottom, 12px))', maxHeight:'min(70vh, calc(100dvh - 32px))', display:'flex', flexDirection:'column' }}>
         <div style={{ width:36, height:4, borderRadius:2, background:'#ddd', margin:'0 auto 18px' }} />
         <p style={{ fontSize:16, fontWeight:700, color:'#1a1a2e', marginBottom:14 }}>Comments ({comments.length})</p>
         <div style={{ flex:1, overflowY:'auto', marginBottom:14, display:'flex', flexDirection:'column', gap:12 }}>
           {comments.length === 0 && <p style={{ fontSize:14, color:'#9aaab8', textAlign:'center', padding:'24px 0' }}>No comments yet — be the first!</p>}
           {comments.map((c, i) => (
             <div key={c._id || i} style={{ display:'flex', gap:10 }}>
-              <img src={c.user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.user?.fullName||'A')}&background=008080&color=fff`} alt="" style={{ width:30, height:30, borderRadius:'50%', objectFit:'cover', flexShrink:0 }} />
+              <Avatar user={c.user} size={30} />
               <div>
                 <p style={{ fontSize:13, fontWeight:700, color:'#1a1a2e' }}>{c.user?.fullName || 'Athlete'}</p>
                 <p style={{ fontSize:13, color:'#4a5e6a', lineHeight:1.4 }}>{c.body}</p>
@@ -209,7 +211,7 @@ function CommentSheet({ item, onClose, onPost, showToast }) {
           ))}
         </div>
         <div style={{ display:'flex', gap:10 }}>
-          <input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter') submit() }} placeholder="Add a comment…" style={{ flex:1, height:44, borderRadius:22, border:'1.5px solid #e8f4f4', padding:'0 16px', fontSize:14, color:'#1a1a2e', outline:'none', fontFamily:'inherit' }} />
+          <input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter') submit() }} onFocus={e=>{ const el = e.target; setTimeout(() => el.scrollIntoView({ block:'center', behavior:'smooth' }), 250) }} placeholder="Add a comment…" style={{ flex:1, height:44, borderRadius:22, border:'1.5px solid #e8f4f4', padding:'0 16px', fontSize:14, color:'#1a1a2e', outline:'none', fontFamily:'inherit' }} />
           <button onClick={submit} disabled={!text.trim() || posting} style={{ height:44, paddingInline:18, borderRadius:22, background:'#008080', color:'#fff', border:'none', fontWeight:600, fontSize:14, cursor: text.trim() ? 'pointer' : 'not-allowed', opacity: posting ? .7 : 1 }}>
             {posting ? '…' : 'Post'}
           </button>
@@ -385,7 +387,7 @@ export default function Home({ user, onNav, showToast, isMobile = true, onOpenAc
         </button>
         {isMobile && (
           <button onClick={() => onNav?.('profile')} style={{ border:'none', background:'none', padding:0, cursor:'pointer' }}>
-            <img src={user?.avatarUrl || user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName)}&background=008080&color=fff&size=80`} alt="Profile" style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover', border:'2px solid #008080' }} onError={e=>{ e.target.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(firstName)}&background=008080&color=fff&size=80` }} />
+            <Avatar user={user} size={36} border="2px solid #008080" />
           </button>
         )}
       </div>

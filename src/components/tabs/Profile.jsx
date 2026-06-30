@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import Settings from '../Settings'
 import { compressImageFile } from '../../lib/imageUtils'
 import { ajax } from '../../lib/ajaxClient'
+import Avatar from '../Avatar'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -212,7 +213,6 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
   const displayName = user?.fullName || user?.name || 'Athlete'
   const displayUser = user?.username || 'athlete'
   const displayBio  = user?.bio || 'Endurance athlete. Pushing the limits, one step at a time.'
-  const avatarSrc   = user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=008080&color=fff&size=160`
   const followers   = user?.followersCount ?? 0
   const following   = user?.followingCount ?? 0
   const activities  = user?.activitiesCount ?? 0
@@ -249,7 +249,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
           ) : <span />}
         </div>
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', paddingBottom:28 }}>
-          <img src={avatarSrc} alt={displayName} style={{ width:90, height:90, borderRadius:'50%', objectFit:'cover', border:'3px solid rgba(255,255,255,.35)', marginBottom:14 }} onError={e=>{ e.target.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=008080&color=fff&size=160` }} />
+          <Avatar user={user} size={90} border="3px solid rgba(255,255,255,.35)" style={{ marginBottom:14 }} />
           <h1 style={{ fontSize:22, fontWeight:800, color:'#fff', marginBottom:4 }}>{displayName}</h1>
           <p style={{ fontSize:13, color:'rgba(255,255,255,.7)', marginBottom:8 }}>@{displayUser}</p>
           <p style={{ fontSize:13, color:'rgba(255,255,255,.6)', marginBottom:20, textAlign:'center', padding:'0 32px', lineHeight:1.6 }}>{displayBio}</p>
@@ -482,7 +482,7 @@ export default function Profile({ user: propUser, onLogout, onStats, showToast, 
 
       {editing && editForm && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:200, display:'flex', alignItems:'flex-end' }} onClick={() => setEditing(false)}>
-          <div style={{ background:'#fff', width:'100%', maxWidth:480, margin:'0 auto', borderRadius:'24px 24px 0 0', padding:'24px 20px 40px', animation:'slideUp .3s ease' }} onClick={e => e.stopPropagation()}>
+          <div style={{ background:'#fff', width:'100%', maxWidth:480, margin:'0 auto', borderRadius:'24px 24px 0 0', padding:'24px 20px calc(40px + env(safe-area-inset-bottom, 0px))', maxHeight:'calc(100dvh - 32px)', overflowY:'auto', animation:'slideUp .3s ease' }} onClick={e => e.stopPropagation()}>
             <div style={{ width:40, height:4, borderRadius:2, background:'#e0eeee', margin:'0 auto 20px' }} />
             <h3 style={{ fontSize:18, fontWeight:800, color:'#1a1a2e', marginBottom:20 }}>Edit Profile</h3>
 

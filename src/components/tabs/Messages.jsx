@@ -1,12 +1,8 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react'
+import Avatar from '../Avatar'
+import { DEMO_CONVERSATION_PEOPLE as DEMO_PEOPLE } from '../../lib/demoUsers'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-
-const DEMO_PEOPLE = [
-  { _id: 'demo1', fullName: 'Running Mentor', username: 'running_mentor', avatarUrl: 'https://images.unsplash.com/photo-1499996860823-5214fcc65f8f?w=80&q=80', isDemo: true, last: 'Ask me anything about pacing and training plans.' },
-  { _id: 'demo2', fullName: 'Cycling Partner', username: 'cycling_partner', avatarUrl: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=80&q=80', isDemo: true, last: 'Looking for a ride buddy this weekend?' },
-  { _id: 'demo3', fullName: 'Recovery Advisor', username: 'recovery_advisor', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80', isDemo: true, last: 'Remember — rest days build fitness too.' },
-]
 
 function timeFmt(iso) {
   if (!iso) return ''
@@ -36,7 +32,7 @@ function UserSearchModal({ onClose, onStart }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ width: '100%', maxWidth: 430, background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px 16px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: '100%', maxWidth: 430, background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px 16px calc(16px + env(safe-area-inset-bottom, 0px))', maxHeight: 'calc(100dvh - 32px)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ width: 36, height: 4, borderRadius: 2, background: '#ddd', margin: '0 auto 16px' }} />
         <p style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e', marginBottom: 14 }}>New Message</p>
         <div style={{ display: 'flex', alignItems: 'center', background: '#f7fbfb', borderRadius: 12, border: '1.5px solid #e8f4f4', padding: '0 12px', height: 42, gap: 8, marginBottom: 12 }}>
@@ -48,7 +44,7 @@ function UserSearchModal({ onClose, onStart }) {
           {!loading && results.length === 0 && <p style={{ fontSize: 14, color: '#9aaab8', textAlign: 'center', padding: '24px 0' }}>No athletes found</p>}
           {results.map(u => (
             <button key={u._id} onClick={() => onStart(u)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', background: 'none', border: 'none', borderBottom: '1px solid #e8f4f4', cursor: 'pointer', textAlign: 'left' }}>
-              <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName)}&background=008080&color=fff`} alt={u.fullName} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+              <Avatar user={u} size={44} />
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>{u.fullName}</p>
                 <p style={{ fontSize: 12, color: '#9aaab8' }}>@{u.username}</p>
@@ -65,7 +61,7 @@ function UserSearchModal({ onClose, onStart }) {
 function ProfilePreview({ user, onFollowToggle, onViewProfile }) {
   return (
     <div style={{ width:260, flexShrink:0, borderLeft:'1px solid #e8f4f4', padding:'24px 20px', display:'flex', flexDirection:'column', alignItems:'center', height:'100%', overflowY:'auto' }}>
-      <img src={user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName)}&background=008080&color=fff&size=120`} alt={user.fullName} style={{ width:84, height:84, borderRadius:'50%', objectFit:'cover', marginBottom:12 }} />
+      <Avatar user={user} size={84} style={{ marginBottom:12 }} />
       <p style={{ fontSize:16, fontWeight:800, color:'#1a1a2e' }}>{user.fullName}</p>
       <p style={{ fontSize:12, color:'#9aaab8', marginBottom:10 }}>@{user.username}</p>
       {user.isBot && <span style={{ fontSize:10, fontWeight:700, color:'#008080', background:'rgba(0,128,128,.1)', padding:'3px 10px', borderRadius:20, marginBottom:10 }}>VISION OFFICIAL BOT</span>}
@@ -125,7 +121,7 @@ function ChatThread({ otherUser, messages, onBack, onSend, isMobile, loading, on
           </button>
         )}
         <button onClick={() => canOpenProfile && onOpenProfile?.(otherUser._id)} disabled={!canOpenProfile} style={{ display:'flex', alignItems:'center', gap:12, background:'none', border:'none', padding:0, cursor: canOpenProfile ? 'pointer' : 'default', textAlign:'left', flex:1 }}>
-          <img src={otherUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.fullName)}&background=008080&color=fff`} alt={otherUser.fullName} style={{ width:40, height:40, borderRadius:'50%', objectFit:'cover' }} />
+          <Avatar user={otherUser} size={40} />
           <div style={{ flex:1 }}>
             <p style={{ fontSize:15, fontWeight:700, color:'#1a1a2e', display:'flex', alignItems:'center', gap:5 }}>{otherUser.fullName}{otherUser.isBot && <BotIcon />}</p>
             <p style={{ fontSize:12, color:'#9aaab8', fontWeight:500 }}>
@@ -146,7 +142,7 @@ function ChatThread({ otherUser, messages, onBack, onSend, isMobile, loading, on
           const fromMe = m.fromMe
           return (
             <div key={m._id} style={{ display: 'flex', justifyContent: fromMe ? 'flex-end' : 'flex-start', gap: 8, alignItems: 'flex-end' }}>
-              {!fromMe && <img src={otherUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.fullName)}&background=008080&color=fff`} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />}
+              {!fromMe && <Avatar user={otherUser} size={26} />}
               <div>
                 <div style={{ background: fromMe ? 'linear-gradient(135deg,#007a7a,#00c853)' : '#fff', color: fromMe ? '#fff' : '#1a1a2e', borderRadius: fromMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', maxWidth: 280, fontSize: 14, lineHeight: 1.5, boxShadow: '0 1px 6px rgba(0,0,0,0.07)' }}>
                   {m.body}
@@ -159,8 +155,8 @@ function ChatThread({ otherUser, messages, onBack, onSend, isMobile, loading, on
         <div ref={bottomRef} />
       </div>
 
-      <div style={{ background: '#fff', padding: '10px 12px 28px', display: 'flex', alignItems: 'center', gap: 8, borderTop: '1px solid #e8f4f4', flexShrink: 0 }}>
-        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Message…" maxLength={1000} style={{ flex: 1, height: 42, background: '#f7fbfb', border: '1.5px solid #e8f4f4', borderRadius: 21, padding: '0 16px', fontSize: 14, color: '#1a1a2e', outline: 'none', fontFamily: 'inherit' }} />
+      <div style={{ background: '#fff', padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 18px))', display: 'flex', alignItems: 'center', gap: 8, borderTop: '1px solid #e8f4f4', flexShrink: 0 }}>
+        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} onFocus={e => { const el = e.target; setTimeout(() => el.scrollIntoView({ block: 'end', behavior: 'smooth' }), 250) }} placeholder="Message…" maxLength={1000} style={{ flex: 1, height: 42, background: '#f7fbfb', border: '1.5px solid #e8f4f4', borderRadius: 21, padding: '0 16px', fontSize: 14, color: '#1a1a2e', outline: 'none', fontFamily: 'inherit' }} />
         <button onClick={handleSend} disabled={!input.trim() || sending} style={{ width: 42, height: 42, borderRadius: '50%', background: input.trim() ? 'linear-gradient(135deg,#007a7a,#00c853)' : '#e8f4f4', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: input.trim() ? 'pointer' : 'not-allowed', transition: 'background .2s', flexShrink: 0 }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
         </button>
@@ -302,7 +298,7 @@ export default function Messages({ user, showToast, isMobile = true, onOpenProfi
         {filtered.map((c, i) => (
           <button key={c._id} onClick={() => openUser(c)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '13px 16px', background: !isMobile && active?._id === c._id ? '#f0fafa' : 'none', border: 'none', borderBottom: i < filtered.length - 1 ? '1px solid #e8f4f4' : 'none', cursor: 'pointer', textAlign: 'left' }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
-              <img src={c.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.fullName)}&background=008080&color=fff`} alt={c.fullName} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover' }} />
+              <Avatar user={c} size={52} />
               {c.isBot && (
                 <span style={{ position: 'absolute', bottom: 1, right: 1, width: 16, height: 16, borderRadius: '50%', background: '#00E676', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#003d3d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

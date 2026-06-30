@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { ajax } from '../../lib/ajaxClient'
+import Avatar from '../Avatar'
 
 const DEMO_LEADERS = [
   { rank:1, _id:'demo1', fullName:'Marcus Chen',    username:'marcus_runs',   totalKm:842.4, totalActivities:64, favoriteSport:'Run',  avatarUrl:'https://images.unsplash.com/photo-1499996860823-5214fcc65f8f?w=80&q=80', sparkline:[58,72,80,69,91,104] },
@@ -200,7 +201,7 @@ export default function Stats({ user, onBack, isMobile = true, onOpenProfile }) 
   const hasData = (totals.totalActivities || 0) > 0
   const displayName = user?.fullName || myStats?.user?.fullName || 'Athlete'
   const displayUser = user?.username || myStats?.user?.username || 'athlete'
-  const avatarSrc = user?.avatarUrl || myStats?.user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=008080&color=fff&size=120`
+  const statsUser = { fullName: displayName, username: displayUser, avatarUrl: user?.avatarUrl || myStats?.user?.avatarUrl }
 
   const realLeadersHaveData = leaders?.some(l => l.totalKm > 0)
   const shownLeaders = (leaders && realLeadersHaveData) ? leaders : DEMO_LEADERS
@@ -234,7 +235,7 @@ export default function Stats({ user, onBack, isMobile = true, onOpenProfile }) 
   const PersonalContent = (
     <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
       <div style={{ background:'linear-gradient(150deg,#003d3d,#007a7a)', borderRadius:20, padding:'22px 20px', display:'flex', alignItems:'center', gap:16 }}>
-        <img src={avatarSrc} alt={displayName} style={{ width:64, height:64, borderRadius:'50%', objectFit:'cover', border:'2.5px solid rgba(255,255,255,.35)' }} onError={e=>{e.target.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=008080&color=fff&size=120`}} />
+        <Avatar user={statsUser} size={64} border="2.5px solid rgba(255,255,255,.35)" />
         <div>
           <p style={{ fontSize:11, color:'rgba(255,255,255,.6)', fontWeight:600, letterSpacing:'.05em', marginBottom:3 }}>YOUR ATHLETIC INTELLIGENCE OVERVIEW</p>
           <p style={{ fontSize:18, fontWeight:800, color:'#fff' }}>{displayName}</p>
@@ -325,10 +326,12 @@ export default function Stats({ user, onBack, isMobile = true, onOpenProfile }) 
       <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)', gap:10 }}>
         {shownLeaders.map((l, i) => (
           <button key={l._id} onClick={() => onOpenProfile?.(l._id)} style={{ background:'#fff', borderRadius:16, padding:'14px 16px', display:'flex', alignItems:'center', gap:12, boxShadow:'0 2px 8px rgba(0,128,128,.06)', border:'1px solid #e8f4f4', cursor:'pointer', textAlign:'left' }}>
-            <span style={{ fontSize:15, fontWeight:800, color: i===0 ? '#f59e0b' : i===1 ? '#94a3b8' : i===2 ? '#d97706' : '#9aaab8', width:22, textAlign:'center', flexShrink:0 }}>
-              {i < 3 ? ['🥇','🥈','🥉'][i] : `#${l.rank}`}
-            </span>
-            <img src={l.avatarUrl} alt={l.fullName} style={{ width:44, height:44, borderRadius:'50%', objectFit:'cover', border:'2px solid #e8f4f4', flexShrink:0 }} onError={e=>{e.target.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(l.fullName)}&background=008080&color=fff`}} />
+            {i < 3 ? (
+              <div style={{ width:22, height:22, borderRadius:'50%', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background: i===0 ? '#f59e0b' : i===1 ? '#94a3b8' : '#d97706', color:'#fff', fontSize:11, fontWeight:800 }}>{i+1}</div>
+            ) : (
+              <span style={{ fontSize:15, fontWeight:800, color:'#9aaab8', width:22, textAlign:'center', flexShrink:0 }}>#{l.rank}</span>
+            )}
+            <Avatar user={l} size={44} border="2px solid #e8f4f4" />
             <div style={{ flex:1, minWidth:0 }}>
               <p style={{ fontSize:14, fontWeight:700, color:'#1a1a2e', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{l.fullName}</p>
               <p style={{ fontSize:11, color:'#9aaab8' }}>@{l.username}{l.favoriteSport ? ` · ${l.favoriteSport}` : ''}</p>

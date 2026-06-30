@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getSportImage } from '../lib/sportImages'
+import Avatar from './Avatar'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -138,7 +139,7 @@ export default function ActivityDetail({ activity, currentUserId, user, onClose,
 
       <div style={{ maxWidth:680, margin:'0 auto', padding:'20px 18px 60px' }}>
         <button onClick={() => onOpenProfile(item)} style={{ display:'flex', alignItems:'center', gap:10, background:'none', border:'none', cursor:'pointer', padding:0, marginBottom:16 }}>
-          <img src={item.user?.avatarUrl} alt="" style={{ width:42, height:42, borderRadius:'50%', objectFit:'cover', border:'2px solid #e8f4f4' }} onError={e=>{e.target.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80'}} />
+          <Avatar user={item.user} size={42} border="2px solid #e8f4f4" />
           <div style={{ textAlign:'left' }}>
             <p style={{ fontSize:14, fontWeight:700, color:'#1a1a2e' }}>{item.user?.fullName}</p>
             <p style={{ fontSize:12, color:'#9aaab8' }}>@{item.user?.username} {item.location ? `· ${item.location}` : ''}</p>
@@ -192,7 +193,7 @@ export default function ActivityDetail({ activity, currentUserId, user, onClose,
           {(!item.comments || item.comments.length === 0) && <p style={{ fontSize:13, color:'#9aaab8' }}>No comments yet — be the first!</p>}
           {item.comments?.map((c, i) => (
             <div key={c._id || i} style={{ display:'flex', gap:10 }}>
-              <img src={c.user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.user?.fullName||'A')}&background=008080&color=fff`} alt="" style={{ width:32, height:32, borderRadius:'50%', objectFit:'cover', flexShrink:0 }} />
+              <Avatar user={c.user} size={32} />
               <div>
                 <p style={{ fontSize:13, fontWeight:700, color:'#1a1a2e' }}>{c.user?.fullName || 'Athlete'}</p>
                 <p style={{ fontSize:13, color:'#4a5e6a', lineHeight:1.4 }}>{c.body}</p>

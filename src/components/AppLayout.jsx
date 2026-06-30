@@ -12,6 +12,7 @@ import Stats       from './tabs/Stats'
 import Groups, { GroupDetail } from './tabs/Groups'
 import AdminDashboard from './tabs/AdminDashboard'
 import { ENTRY_MODE_KEY } from '../lib/entryMode'
+import Avatar from './Avatar'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 function isRealId(id) { return typeof id === 'string' && /^[0-9a-f]{24}$/i.test(id) }
@@ -87,9 +88,6 @@ function DesktopSidebar({ tab, onNav, unread, user, onLogout }) {
     onLogout()
   }
 
-  const avatar = user?.avatarUrl ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'A')}&background=008080&color=fff&size=80`
-
   const navItems = user?.role === 'admin' ? [...DESKTOP_NAV, { id:'admin', label:'Admin' }] : DESKTOP_NAV
 
   return (
@@ -120,8 +118,7 @@ function DesktopSidebar({ tab, onNav, unread, user, onLogout }) {
 
       <div style={{ padding:'14px 14px 20px', borderTop:'1px solid #e8f4f4' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-          <img src={avatar} alt={user?.fullName} style={{ width:38, height:38, borderRadius:'50%', objectFit:'cover', flexShrink:0 }}
-            onError={e => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName||'A')}&background=008080&color=fff` }} />
+          <Avatar user={user} size={38} />
           <div style={{ flex:1, overflow:'hidden' }}>
             <p style={{ fontSize:13, fontWeight:700, color:'#0d1f1f', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.fullName || 'Athlete'}</p>
             <p style={{ fontSize:11, color:'#8a9baa' }}>@{user?.username || 'user'}</p>

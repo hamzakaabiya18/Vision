@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
 import { ajax } from '../../lib/ajaxClient'
 import { getSportImage } from '../../lib/sportImages'
+import Avatar from '../Avatar'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -66,7 +67,7 @@ function CreateGroupModal({ onClose, onCreate }) {
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:999, display:'flex', alignItems:'flex-end' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ width:'100%', maxWidth:600, margin:'0 auto', background:'#fff', borderRadius:'24px 24px 0 0', padding:'24px 20px 40px', maxHeight:'90vh', overflowY:'auto' }}>
+      <div style={{ width:'100%', maxWidth:600, margin:'0 auto', background:'#fff', borderRadius:'24px 24px 0 0', padding:'24px 20px calc(40px + env(safe-area-inset-bottom, 0px))', maxHeight:'calc(100dvh - 32px)', overflowY:'auto' }}>
         <div style={{ width:40, height:4, borderRadius:2, background:'#ddd', margin:'0 auto 20px' }} />
         <h2 style={{ fontSize:20, fontWeight:800, color:'#1a1a2e', marginBottom:20 }}>Create Group</h2>
         <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -146,7 +147,7 @@ export function GroupDetail({ group, currentUserId, currentUserRole, onClose, on
         {group.members?.length > 0 && (
           <div style={{ display:'flex', alignItems:'center', marginBottom:24 }}>
             {group.members.slice(0,8).map((m,i) => (
-              <img key={m._id || i} src={m.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.fullName||'A')}&background=008080&color=fff`} alt="" style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover', border:'2px solid #fff', marginLeft: i===0?0:-10 }} />
+              <Avatar key={m._id || i} user={m} size={36} border="2px solid #fff" style={{ marginLeft: i===0?0:-10 }} />
             ))}
           </div>
         )}
@@ -160,7 +161,7 @@ export function GroupDetail({ group, currentUserId, currentUserRole, onClose, on
               const isGroupOwner = mid === (group.admin?._id || group.admin)
               return (
                 <div key={mid} style={{ display:'flex', alignItems:'center', gap:10, padding:'7px 0', borderBottom:'1px solid #f0f4f4' }}>
-                  <img src={m.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.fullName||'A')}&background=008080&color=fff`} alt="" style={{ width:30, height:30, borderRadius:'50%', objectFit:'cover' }} />
+                  <Avatar user={m} size={30} />
                   <span style={{ flex:1, fontSize:13, color:'#1a1a2e' }}>{m.fullName || 'Member'}{isGroupOwner ? ' (Owner)' : ''}</span>
                   {!isGroupOwner && (
                     <button onClick={() => onRemoveMember?.(group._id, mid)} style={{ fontSize:11, fontWeight:700, color:'#e53935', background:'none', border:'1.5px solid #ffcdd2', borderRadius:8, padding:'4px 10px', cursor:'pointer' }}>Remove</button>
