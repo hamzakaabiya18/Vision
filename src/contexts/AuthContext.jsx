@@ -2,6 +2,12 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 
 const API       = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 const TOKEN_KEY = 'vision_token'
+
+/* Warn in production if the API is still pointing at localhost — this means
+   VITE_API_URL was not set in Vercel environment variables before the build. */
+if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && API.includes('localhost')) {
+  console.error('[VISION] VITE_API_URL is not set — API calls will fail in production. Set VITE_API_URL in Vercel to your Render backend URL and redeploy.')
+}
 const USER_KEY  = 'vision_user'
 
 // sessionStorage isolates each browser tab so multiple accounts can be open simultaneously
@@ -62,7 +68,7 @@ export function AuthProvider({ children }) {
         body:    JSON.stringify({ emailOrUsername, password }),
       })
     } catch {
-      throw new Error('Cannot reach the server. Please make sure the backend is running.')
+      throw new Error('Server connection failed. Please try again in a few seconds.')
     }
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || 'Invalid email/username or password')
@@ -81,7 +87,7 @@ export function AuthProvider({ children }) {
         body:    JSON.stringify(fields),
       })
     } catch {
-      throw new Error('Cannot reach the server. Please make sure the backend is running.')
+      throw new Error('Server connection failed. Please try again in a few seconds.')
     }
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || 'Signup failed')
