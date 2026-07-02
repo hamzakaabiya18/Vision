@@ -9,6 +9,6 @@ export const ENTRY_MODES = [
   { id:'athlete',    label:'Registered Athlete', desc:'Full VISION experience — feed, groups, stats, messages.' },
   { id:'groupOwner', label:'Group Owner',        desc:'Manage your groups and members.' },
   { id:'admin',      label:'Admin',              desc:'Platform dashboard & analytics.' },
-  { id:'coachbot',   label:'VISION Coach Bot',   desc:'Chat with HAMZA, ASALA & MAY.' },
+  { id:'coachbot',   label:'VISION Coach Bot',   desc:'Chat with HAMZA, ASALEH & MAY.' },
   { id:'guest',      label:'Guest',              desc:'Browse public content — no account needed.' },
 ]

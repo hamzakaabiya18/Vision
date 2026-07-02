@@ -8,7 +8,7 @@
 export const SPORT_IMAGES = {
   Run: [
     'https://images.unsplash.com/photo-1486218119243-13883505764c?w=800&q=80',
-    'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?w=800&q=80',
+    'https://img.magnific.com/premium-photo/runners-running-city-concept-global-spirit-new-york-city-marathon_1222920-5029.jpg?semt=ais_hybrid&w=740&q=80',
     'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80',
     'https://images.unsplash.com/photo-1473041989931-c5f15c7bc1a5?w=800&q=80',
     'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&q=80',
