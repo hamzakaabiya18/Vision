@@ -1,6 +1,7 @@
 # VISION — Athletic Intelligence
 
-A premium social fitness platform built with Next.js 14, Express.js, MongoDB, Socket.io, D3.js, and React.
+A premium social fitness platform 
+https://vision-ten-tau.vercel.app/
 
 ---
 
