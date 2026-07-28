@@ -5,6 +5,7 @@ import { getSportImage } from '../../lib/sportImages'
 import { getActivityImage } from '../../lib/activityImages'
 import { DEMO_FEED_USERS } from '../../lib/demoUsers'
 import Avatar from '../Avatar'
+import TrainingVideoPlayer from '../video/TrainingVideoPlayer'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -293,14 +294,15 @@ function PerformanceSummary({ user, weeklyFilter, setWeekFilter }) {
 }
 
 export default function Home({ user, onNav, showToast, isMobile = true, onOpenActivity, onOpenProfile }) {
-  const [feed,         setFeed]        = useState(SEED_FEED)
-  const [commentItem,  setCommentItem] = useState(null)
-  const [loadingFeed,  setLoadingFeed] = useState(true)
-  const [weeklyFilter, setWeekFilter]  = useState('Weekly')
+  const [feed,             setFeed]           = useState(SEED_FEED)
+  const [commentItem,      setCommentItem]    = useState(null)
+  const [loadingFeed,      setLoadingFeed]    = useState(true)
+  const [weeklyFilter,     setWeekFilter]     = useState('Weekly')
+  const [featuredVideo,    setFeaturedVideo]  = useState({ url: '', title: '' })
   const currentUserId = user?._id || user?.id || 'me'
 
   const loadFeed = useCallback(() => {
-    const token = sessionStorage.getItem('vision_token')
+    const token = localStorage.getItem('vision_token')
     if (!token) { setLoadingFeed(false); return }
     setLoadingFeed(true)
     fetch(`${API}/activities/feed?limit=20`, { headers: { Authorization: `Bearer ${token}` } })
@@ -310,6 +312,9 @@ export default function Home({ user, onNav, showToast, isMobile = true, onOpenAc
         // Real activities always come first; seed activities fill in below so the
         // feed never looks sparse, especially for brand-new accounts with few posts.
         setFeed(real.length > 0 ? [...real, ...SEED_FEED] : SEED_FEED)
+        /* Pick the first activity that has a videoUrl for the featured player */
+        const withVideo = real.find(a => a.videoUrl)
+        if (withVideo) setFeaturedVideo({ url: withVideo.videoUrl, title: withVideo.title })
       })
       .catch(() => {})
       .finally(() => setLoadingFeed(false))
@@ -434,6 +439,7 @@ export default function Home({ user, onNav, showToast, isMobile = true, onOpenAc
       <div style={{ padding:'40px 24px 40px', display:'grid', gridTemplateColumns:'1fr 300px', gap:28, alignItems:'start' }}>
         <div>
           {Header}
+          <TrainingVideoPlayer videoUrl={featuredVideo.url} title={featuredVideo.title} isMobile={false} />
           {QuickStart}
           {FeedSection}
         </div>
@@ -450,6 +456,7 @@ export default function Home({ user, onNav, showToast, isMobile = true, onOpenAc
     <div style={{ background:'#F0FAFA', minHeight:'100%', paddingBottom:32 }}>
       {Header}
       <div style={{ margin:'0 16px' }}>
+        <TrainingVideoPlayer videoUrl={featuredVideo.url} title={featuredVideo.title} isMobile={true} />
         <PerformanceSummary user={user} weeklyFilter={weeklyFilter} setWeekFilter={setWeekFilter} />
       </div>
       {QuickStart}

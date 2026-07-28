@@ -209,7 +209,7 @@ export default function AddActivity({ user, showToast, onDone }) {
     }
     let saved = false
     try {
-      const token = sessionStorage.getItem('vision_token')
+      const token = localStorage.getItem('vision_token')
       const res = await fetch(`${API}/activities`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(body) })
       if (!res.ok) {
         const data = await res.json().catch(() => null)

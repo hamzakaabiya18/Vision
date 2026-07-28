@@ -1,0 +1,6 @@
+file 'C:\Users\Admin\Semester2\Final Project\Vision-frontend\public\videos\mixkit-tracking-a-man-through-the-forest-87-4k.mp4'
+file 'C:\Users\Admin\Semester2\Final Project\Vision-frontend\public\videos\mixkit-two-mountain-bikers-jumping-off-ramps-in-a-forest-44330-full-hd.mp4'
+file 'C:\Users\Admin\Semester2\Final Project\Vision-frontend\public\videos\mixkit-cyclist-in-the-park-2002-full-hd.mp4'
+file 'C:\Users\Admin\Semester2\Final Project\Vision-frontend\public\videos\mixkit-boy-skiing-on-the-snow-3356-full-hd.mp4'
+file 'C:\Users\Admin\Semester2\Final Project\Vision-frontend\public\videos\mixkit-swimming-underwater-in-a-pool-3171-full-hd.mp4'
+file 'C:\Users\Admin\Semester2\Final Project\Vision-frontend\public\videos\mixkit-athletic-man-doing-reps-with-a-large-dumbbell-40788-full-hd.mp4'

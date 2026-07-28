@@ -10,11 +10,12 @@ if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' &&
 }
 const USER_KEY  = 'vision_user'
 
-// sessionStorage isolates each browser tab so multiple accounts can be open simultaneously
+// localStorage persists the session across tabs and browser restarts —
+// user stays logged in until they explicitly press Logout
 const store = {
-  get:    (key) => sessionStorage.getItem(key),
-  set:    (key, val) => sessionStorage.setItem(key, val),
-  remove: (key) => sessionStorage.removeItem(key),
+  get:    (key) => localStorage.getItem(key),
+  set:    (key, val) => localStorage.setItem(key, val),
+  remove: (key) => localStorage.removeItem(key),
 }
 
 const AuthContext = createContext(null)
@@ -127,5 +128,5 @@ export function useAuth() {
 }
 
 export function getToken() {
-  return sessionStorage.getItem(TOKEN_KEY) || null
+  return localStorage.getItem(TOKEN_KEY) || null
 }

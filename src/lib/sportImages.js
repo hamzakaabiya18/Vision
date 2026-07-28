@@ -25,7 +25,7 @@ export const SPORT_IMAGES = {
   Hike: [
     'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80',
     'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80',
-    'https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=800&q=80',
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQbVJpOGTQh4I87mA8Hc67BJ1f4TynNfxPU8Cdactczxeyzm-R2St_MmQU&s=10',
     'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&q=80',
     'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80',
     'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=800&q=80',
@@ -67,7 +67,7 @@ export const SPORT_IMAGES = {
     'https://images.unsplash.com/photo-1564769662533-4f00a87b4056?w=800&q=80',
   ],
   Recovery: [
-    'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80',
+    'https://www.bulletproof.com/wp-content/uploads/2021/07/young-man-stretching-himself-on-a-foam-roller-picture-id1182421361-752x401.jpg',
     'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80',
     'https://images.unsplash.com/photo-1591343395082-e120087004b4?w=800&q=80',
   ],
@@ -89,7 +89,7 @@ const ALIASES = {
 }
 
 // Generic premium fallback used when the sport type is unknown or missing.
-export const DEFAULT_SPORT_IMAGE = 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80'
+export const DEFAULT_SPORT_IMAGE = 'https://jimcordova.com/wp-content/uploads/2023/08/Post-Workout-Recovery-Steps-for-Optimal-Fitness-Progress.jpg'
 
 function hashSeed(seed) {
   const str = String(seed ?? '')

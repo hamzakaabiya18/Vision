@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import Avatar from '../Avatar'
 import { DEMO_CONVERSATION_PEOPLE as DEMO_PEOPLE } from '../../lib/demoUsers'
+import { getSocket } from '../../services/socketClient'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -11,7 +12,7 @@ function timeFmt(iso) {
   return sameDay ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString([], { month: 'short', day: 'numeric' })
 }
 
-function token() { return sessionStorage.getItem('vision_token') }
+function token() { return localStorage.getItem('vision_token') }
 
 function UserSearchModal({ onClose, onStart }) {
   const [q, setQ] = useState('')
@@ -191,8 +192,6 @@ export default function Messages({ user, showToast, isMobile = true, onOpenProfi
       .then(d => { if (Array.isArray(d?.bots)) setBots(d.bots) })
       .catch(() => {})
     loadConversations()
-    const iv = setInterval(loadConversations, 8000)
-    return () => clearInterval(iv)
   }, [loadConversations])
 
   const loadMessages = useCallback((userId) => {
@@ -203,13 +202,34 @@ export default function Messages({ user, showToast, isMobile = true, onOpenProfi
       .finally(() => setMsgsLoading(false))
   }, [myId])
 
+  /* Load message history once when a conversation is opened */
   useEffect(() => {
     if (!active || active.isDemo) return
     setMsgsLoading(true)
     loadMessages(active._id)
-    const iv = setInterval(() => loadMessages(active._id), 4000)
-    return () => clearInterval(iv)
-  }, [active, loadMessages])
+  }, [active?._id])
+
+  /* Socket.io — receive real-time messages from other users */
+  const activeRef = useRef(active)
+  useEffect(() => { activeRef.current = active }, [active])
+
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+
+    function onMessage(msg) {
+      const senderId = msg.sender?._id || msg.sender
+      /* If the incoming message is from the currently open conversation, append it */
+      if (activeRef.current && (activeRef.current._id === senderId)) {
+        setMessages(prev => [...prev, { ...msg, fromMe: false }])
+      }
+      /* Always refresh the sidebar conversation list */
+      loadConversations()
+    }
+
+    socket.on('message:receive', onMessage)
+    return () => socket.off('message:receive', onMessage)
+  }, [loadConversations])
 
   async function openUser(u) {
     setNewChat(false)
@@ -240,6 +260,11 @@ export default function Messages({ user, showToast, isMobile = true, onOpenProfi
       const mine = { ...data.message, fromMe: true }
       const newOnes = data.reply ? [mine, { ...data.reply, fromMe: false }] : [mine]
       setMessages(prev => [...prev, ...newOnes])
+      /* Notify receiver via Socket.io (no polling needed on their end) */
+      const socket = getSocket()
+      if (socket?.connected) {
+        socket.emit('message:send', { receiverId: active._id, message: data.message })
+      }
       loadConversations()
     } catch { showToast?.('Could not send message', 'error') }
   }

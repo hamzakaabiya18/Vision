@@ -1,3 +1,61 @@
+/* ==========================================================================
+   CSS3 course requirements — five CSS3 features used by VISION
+   (Professor: search "CSS3" in this file to see all five in one place)
+   ==========================================================================
+
+   1. @font-face — loads Inter from a LOCAL file in /public/fonts/
+      Used by: html/body via --font-sans variable
+   ========================================================================== */
+@font-face {
+  font-family: 'Inter';
+  font-style:  normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/Inter.woff2') format('woff2');
+}
+
+/* 2. text-shadow — adds a subtle glow to the VISION brand heading
+      Used by: .vision-brand-shadow class applied in Brand.jsx / Home header */
+.vision-brand-shadow {
+  text-shadow: 0 2px 10px rgba(0, 128, 128, 0.40),
+               0 1px 3px  rgba(0, 0,   0,   0.15);
+}
+
+/* 3. transition — smooth state changes on interactive elements
+      Used by: .vision-btn class applied on Log-Run / action buttons */
+.vision-btn {
+  transition: background 0.22s ease,
+              transform  0.15s ease,
+              box-shadow 0.22s ease;
+}
+.vision-btn:hover:not(:disabled) {
+  transform:  translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 128, 128, 0.28);
+}
+.vision-btn:active:not(:disabled) {
+  transform:  translateY(0);
+}
+
+/* 4. multiple-columns — training tips in 2 columns on desktop, 1 on mobile
+      Used by: .vision-tips-columns class in the Tips section of Home.jsx */
+.vision-tips-columns {
+  column-count: 2;
+  column-gap:   20px;
+  column-rule:  1px solid rgba(0, 128, 128, 0.18);
+}
+@media (max-width: 600px) {
+  .vision-tips-columns { column-count: 1; }
+}
+
+/* 5. border-radius — rounded corners on cards and interactive elements
+      Used by: .vision-card class and inline styles throughout */
+.vision-card {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+/* ========================================================================== */
+
 :root {
   --teal: #008080;
   --teal-light: #00c853;
